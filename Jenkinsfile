@@ -68,8 +68,7 @@ pipeline {
                     steps {
                         bat "if not exist logs mkdir logs"
                         dir("source"){
-                            bat "python -m pipenv install --dev --deploy && pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log && pipenv check"
-
+                            bat "python -m pipenv install --dev --deploy && pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log && python -m pipenv check"
                         }
                     }
                     post{
