@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Union
 from . import formats
 
 IMAGE_FORMATS = {
@@ -7,7 +7,7 @@ IMAGE_FORMATS = {
 
 
 def convert_image(source: str, output_file: str,
-                  output_format: Union[str, Dict[str, str]]) -> None:
+                  output_format: Union[str, formats.AbsImageConvert]) -> None:
     """Convert image from one file format into another
 
     Args:
@@ -17,7 +17,6 @@ def convert_image(source: str, output_file: str,
 
     """
 
-
     if isinstance(output_format, formats.AbsImageConvert):
         converter = output_format
     else:
@@ -26,4 +25,3 @@ def convert_image(source: str, output_file: str,
     converter.source_file = source
     converter.destination_file = output_file
     converter.convert()
-

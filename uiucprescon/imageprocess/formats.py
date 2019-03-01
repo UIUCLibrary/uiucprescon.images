@@ -1,13 +1,13 @@
 import abc
 
-import pykdu_compress
+import pykdu_compress  # type: ignore
+
 
 class AbsImageConvert(metaclass=abc.ABCMeta):
 
     def __init__(self, source_file=None, destination_file=None):
         self._source_file = source_file
         self._destination_file = destination_file
-
 
     @property
     def source_file(self):
@@ -34,15 +34,18 @@ class HathiJp2(AbsImageConvert):
     def convert(self):
 
         kakadu_args = ["Clevels=5",
-                         "Clayers=8","Corder=RLCP",
-                         "Cuse_sop=yes",
-                         "Cuse_eph=yes",
-                         "Cmodes=RESET|RESTART|CAUSAL|ERTERM|SEGMARK",
-                         "-no_weights",
-                         "-slope",
-                         "42988",
-                         "-jp2_space",
-                         "sRGB"]
-        pykdu_compress.kdu_compress_cli2(self.source_file, self.destination_file, kakadu_args)
+                       "Clayers=8",
+                       "Corder=RLCP",
+                       "Cuse_sop=yes",
+                       "Cuse_eph=yes",
+                       "Cmodes=RESET|RESTART|CAUSAL|ERTERM|SEGMARK",
+                       "-no_weights",
+                       "-slope",
+                       "42988",
+                       "-jp2_space",
+                       "sRGB"]
+        pykdu_compress.kdu_compress_cli2(self.source_file,
+                                         self.destination_file,
+                                         kakadu_args)
 
         print("convertin")
