@@ -328,7 +328,7 @@ pipeline {
             stages{
                 stage("Installing DevPi Client"){
                     environment{
-                        PATH = "${tool 'CPython-3.6'}${PATH}"
+                        PATH = "${tool 'CPython-3.6'};${PATH}"
                     }
                     steps{
                         bat "python -m venv venv\\36"
