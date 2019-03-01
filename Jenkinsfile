@@ -1,6 +1,19 @@
 #!groovy
 @Library(["devpi", "PythonHelpers"]) _
 
+def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUsername, devpiPassword){
+    script {
+            try {
+                bat "${devpiExecutable} login ${devpiUsername} --password ${devpiPassword}"
+                bat "${devpiExecutable} use ${devpiIndex}"
+                bat "${devpiExecutable} remove -y ${pkgName}==${pkgVersion}"
+            } catch (Exception ex) {
+                echo "Failed to remove ${pkgName}==${pkgVersion} from ${devpiIndex}"
+        }
+
+    }
+}
+
 pipeline {
     agent {
         label "Windows && Python3"
@@ -305,7 +318,7 @@ pipeline {
 
 
         }
-        stage("Deploy to Devpi"){
+        stage("Deploy to DevPi"){
             when {
                 allOf{
                     anyOf{
