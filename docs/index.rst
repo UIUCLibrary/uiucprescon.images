@@ -10,6 +10,9 @@ Welcome to uiucprescon.imageprocess's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   install
+   uiucprescon.imageprocess
+
 
 
 Indices and tables

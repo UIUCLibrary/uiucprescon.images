@@ -12,21 +12,32 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import re
+import sys
+from setuptools.config import read_configuration
 
+sys.path.insert(0, os.path.abspath('..'))
+
+
+def get_project_metadata():
+    path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../setup.cfg"))
+    return read_configuration(path)["metadata"]
+
+
+metadata = get_project_metadata()
 
 # -- Project information -----------------------------------------------------
 
-project = 'uiucprescon.imageprocess'
-copyright = '2019, University Library at The University of Illinois at Urbana Champaign: Preservation Services'
-author = 'University Library at The University of Illinois at Urbana Champaign: Preservation Services'
+project = metadata['name']
+copyright = '2019, {}'.format(metadata['author'])
+author = metadata['author']
 
 # The short X.Y version
-version = ''
-# The full version, including alpha/beta/rc tags
-release = '0.0.1'
+version_extractor = re.compile(r"\d+[.]\d+[.]\d+")
+version = version_extractor.search(metadata["version"]).group(0)
+# The full version, including alpha/beta/rc tags.
+release = metadata["version"]
 
 
 # -- General configuration ---------------------------------------------------
@@ -41,7 +52,21 @@ release = '0.0.1'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
+    'sphinx.ext.napoleon'
 ]
+
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
+napoleon_include_init_with_doc = True
+napoleon_include_private_with_doc = False
+napoleon_include_special_with_doc = True
+napoleon_use_admonition_for_examples = False
+napoleon_use_admonition_for_notes = False
+napoleon_use_admonition_for_references = False
+napoleon_use_ivar = False
+napoleon_use_param = True
+napoleon_use_rtype = True
+add_module_names = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -88,7 +113,7 @@ html_theme = 'alabaster'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-
+html_logo = '_static/full_mark_horz_bw.gif'
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
 #
