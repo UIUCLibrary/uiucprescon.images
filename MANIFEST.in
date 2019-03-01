@@ -1,0 +1,3 @@
+include LICENSE README.rst tox.ini
+recursive-include docs *
+recursive-include tests *.py
