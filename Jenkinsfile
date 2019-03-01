@@ -166,7 +166,7 @@ pipeline {
                             }
                             steps {
                                 dir("scm"){
-                                    bat "python -m pipenv run sphinx-build -b doctest docs\\scm ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}\\logs\\doctest.log"
+                                    bat "python -m pipenv run sphinx-build -b doctest docs ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}\\logs\\doctest.log"
         //                            bat "pipenv run sphinx-build -b doctest docs\\scm ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees"
                                 }
                             }
