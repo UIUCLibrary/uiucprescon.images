@@ -33,6 +33,8 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
 
 
 class HathiJp2(AbsImageConvert):
+    """HathiTrust compatible JPEG2000 files"""
+
     name = "HathiTrust JPEG 2000"
 
     def convert(self):
@@ -51,4 +53,3 @@ class HathiJp2(AbsImageConvert):
         pykdu_compress.kdu_compress_cli2(self.source_file,
                                          self.destination_file,
                                          kakadu_args)
-
