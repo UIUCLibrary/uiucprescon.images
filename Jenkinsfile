@@ -11,7 +11,7 @@ pipeline {
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
 //        timeout(25)  // Timeout after 20 minutes. This shouldn't take this long but it hangs for some reason
-        checkoutToSubdirectory("source")
+        checkoutToSubdirectory("scm")
         buildDiscarder logRotator(artifactDaysToKeepStr: '10', artifactNumToKeepStr: '10')
         preserveStashes(buildCount: 5)
     }
@@ -54,7 +54,7 @@ pipeline {
                             }
                             steps{
                                 deleteDir()
-                                dir("source"){
+                                dir("scm"){
                                    checkout scm
                                 }
                             }
@@ -67,7 +67,7 @@ pipeline {
                     }
                     steps {
                         bat "if not exist logs mkdir logs"
-                        dir("source"){
+                        dir("scm"){
                             bat "python -m pipenv install --dev --deploy && pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log && python -m pipenv check"
                         }
                     }
@@ -98,7 +98,7 @@ pipeline {
                 stage("Python Package"){
                     steps {
 
-                        dir("source"){
+                        dir("scm"){
                             lock("system_pipenv_${NODE_NAME}"){
                                 bat "python -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
                             }
@@ -108,8 +108,8 @@ pipeline {
                 stage("Sphinx Documentation"){
                     steps {
                         echo "Building docs on ${env.NODE_NAME}"
-                        dir("source"){
-                            bat "python -m pipenv run sphinx-build docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx.log"
+                        dir("scm"){
+                            bat "python -m pipenv run sphinx-build docs/scm ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx.log"
                         }
                     }
                     post{
@@ -150,7 +150,7 @@ pipeline {
                                 junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
                             }
                             steps{
-                                dir("source"){
+                                dir("scm"){
                                     bat "python -m pipenv run coverage run --parallel-mode --source=uiucprescon -m pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
                                 }
                             }
@@ -165,9 +165,9 @@ pipeline {
                                equals expected: true, actual: params.TEST_RUN_DOCTEST
                             }
                             steps {
-                                dir("source"){
-                                    bat "python -m pipenv run sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}\\logs\\doctest.log"
-        //                            bat "pipenv run sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees"
+                                dir("scm"){
+                                    bat "python -m pipenv run sphinx-build -b doctest docs\\scm ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}\\logs\\doctest.log"
+        //                            bat "pipenv run sphinx-build -b doctest docs\\scm ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees"
                                 }
                             }
                             post{
@@ -184,7 +184,7 @@ pipeline {
                                 equals expected: true, actual: params.TEST_RUN_MYPY
                             }
                             steps{
-                                dir("source"){
+                                dir("scm"){
                                     bat returnStatus: true, script: "pipenv run mypy -p uiucprescon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
                                 }
                             }
@@ -205,7 +205,7 @@ pipeline {
                                 equals expected: true, actual: params.TEST_RUN_TOX
                             }
                             steps {
-                                dir("source"){
+                                dir("scm"){
                                     script{
                                         try{
                                           bat "pipenv runtox.exe --parallel=auto --parallel-live --workdir ${WORKSPACE}\\tox"
@@ -234,7 +234,7 @@ pipeline {
                                 equals expected: true, actual: params.TEST_RUN_FLAKE8
                             }
                             steps{
-                                dir("source"){
+                                dir("scm"){
                                     bat returnStatus: true, script: "pipenv run flake8 uiucprescon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                                 }
                             }
@@ -252,7 +252,7 @@ pipeline {
 
                     post{
                         always{
-                            dir("source"){
+                            dir("scm"){
                                 bat "\"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage combine && \"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && \"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
 
                             }
@@ -266,7 +266,7 @@ pipeline {
                             cleanWs(patterns: [
                                     [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
                                     [pattern: 'reports/coverage', type: 'INCLUDE'],
-                                    [pattern: 'source/.coverage', type: 'INCLUDE']
+                                    [pattern: 'scm/.coverage', type: 'INCLUDE']
                                 ])
                         }
                     }
@@ -285,7 +285,7 @@ pipeline {
                         stage("Packaging sdist and wheel"){
 
                             steps{
-                                dir("source"){
+                                dir("scm"){
                                     bat script: "pipenv run python setup.py build -b ../build sdist -d ../dist --format zip bdist_wheel -d ../dist"
                                 }
                             }
@@ -536,7 +536,7 @@ pipeline {
                     [pattern: 'logs', type: 'INCLUDE'],
                     [pattern: 'dist', type: 'INCLUDE'],
                     [pattern: 'reports', type: 'INCLUDE'],
-                    [pattern: 'source', type: 'INCLUDE'],
+                    [pattern: 'scm', type: 'INCLUDE'],
                     [pattern: '*tmp', type: 'INCLUDE']
                 ]
         }
