@@ -68,7 +68,7 @@ pipeline {
                     steps {
                         bat "if not exist logs mkdir logs"
                         dir("scm"){
-                            bat "python -m pipenv install --dev --deploy && pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log && python -m pipenv check"
+                            bat "python -m pipenv install --dev --deploy && python -m pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log && python -m pipenv check"
                         }
                     }
                     post{
@@ -208,9 +208,9 @@ pipeline {
                                 dir("scm"){
                                     script{
                                         try{
-                                          bat "pipenv runtox.exe --parallel=auto --parallel-live --workdir ${WORKSPACE}\\tox"
+                                          bat "python -m pipenv run tox.exe --parallel=auto --parallel-live --workdir ${WORKSPACE}\\tox"
                                         } catch (exc) {
-                                          bat "pipenv run tox.exe --parallel=auto --parallel-live --workdir ${WORKSPACE}\\tox -vv --recreate"
+                                          bat "python -m pipenv run tox.exe --parallel=auto --parallel-live --workdir ${WORKSPACE}\\tox -vv --recreate"
                                         }
                                     }
                                 }
@@ -286,7 +286,7 @@ pipeline {
 
                             steps{
                                 dir("scm"){
-                                    bat script: "pipenv run python setup.py build -b ../build sdist -d ../dist --format zip bdist_wheel -d ../dist"
+                                    bat script: "python -m pipenv run python setup.py build -b ../build sdist -d ../dist --format zip bdist_wheel -d ../dist"
                                 }
                             }
                             post {
