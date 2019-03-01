@@ -9,6 +9,8 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
         self._source_file = source_file
         self._destination_file = destination_file
 
+    name: str = ""
+
     @property
     def source_file(self):
         return self._source_file
@@ -31,6 +33,8 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
 
 
 class HathiJp2(AbsImageConvert):
+    name = "HathiTrust JPEG 2000"
+
     def convert(self):
 
         kakadu_args = ["Clevels=5",
@@ -48,4 +52,3 @@ class HathiJp2(AbsImageConvert):
                                          self.destination_file,
                                          kakadu_args)
 
-        print("convertin")
