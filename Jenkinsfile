@@ -374,7 +374,7 @@ pipeline {
                                 }
                                 stage("Testing sdist"){
                                     environment{
-                                        PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${tool 'CPython-3.7'};$PATH"
+                                        PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.7'}${PATH}"
                                     }
                                     options{
                                         timeout(10)
@@ -413,11 +413,12 @@ pipeline {
                             options {
                                 skipDefaultCheckout(true)
                             }
-                            environment{
-                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${tool 'CPython-3.7'};$PATH"
-                            }
+
                             stages{
                                 stage("Creating Env for DevPi to test whl"){
+                                    environment{
+                                        PATH = "${tool 'CPython-3.6'};$PATH"
+                                    }
                                     steps{
                                         lock("system_python_${NODE_NAME}"){
                                             bat "python -m pip install pip --upgrade && python -m venv venv "
@@ -428,6 +429,9 @@ pipeline {
                                 stage("Testing Whl"){
                                     options{
                                         timeout(10)
+                                    }
+                                    environment{
+                                        PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.7'};${PATH}"
                                     }
                                     steps {
                                         devpiTest(
