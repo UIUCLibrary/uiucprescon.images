@@ -106,7 +106,6 @@ pipeline {
                     }
                 }
                 stage("Sphinx Documentation"){
-                stage("Sphinx Documentation"){
                     steps {
                         echo "Building docs on ${env.NODE_NAME}"
                         dir("scm"){
