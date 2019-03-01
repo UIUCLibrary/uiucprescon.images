@@ -11,7 +11,14 @@ Welcome to uiucprescon.imageprocess's documentation!
    :caption: Contents:
 
    install
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API:
+
    uiucprescon.imageprocess
+   formats
 
 
 

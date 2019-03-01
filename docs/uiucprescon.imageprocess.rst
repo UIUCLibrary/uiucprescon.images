@@ -1,6 +1,3 @@
-API
-===
-
 uiucprescon.imageprocess
 ------------------------
 
