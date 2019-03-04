@@ -1,6 +1,6 @@
 from typing import Union
 from . import formats
-from . import images
+from . import utils
 
 
 def convert_image(source: str, output_file: str,
@@ -17,7 +17,7 @@ def convert_image(source: str, output_file: str,
     if isinstance(output_format, formats.AbsImageConvert):
         converter = output_format
     else:
-        converter = images.image_formats[output_format]
+        converter = utils.image_formats[output_format]
 
     converter.source_file = source
     converter.destination_file = output_file
