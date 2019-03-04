@@ -491,7 +491,7 @@ pipeline {
                     stages{
                         stage("Pushing to DevPi Production"){
                             input {
-                                message "Release ${env.PKG_NAME} ${env.PKG_VERSION} to DevPi Production?"
+                                message "Release to DevPi Production?"
                             }
                             steps {
 //                                input "Release ${env.PKG_NAME} ${env.PKG_VERSION} to DevPi Production?"
