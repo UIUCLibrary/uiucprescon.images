@@ -490,19 +490,14 @@ pipeline {
                     }
                     stages{
                         stage("Pushing to DevPi Production"){
-//                            input {
-//                                message "Release to DevPi Production?"
-//                            }
+                            input {
+                                message "Release to DevPi Production?"
+                            }
                             steps {
-                                input "Release ${env.PKG_NAME} ${env.PKG_VERSION} to DevPi Production?"
+//                                input "Release ${env.PKG_NAME} ${env.PKG_VERSION} to DevPi Production?"
                                 bat "venv\\36\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\36\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\36\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} production/release"
                             }
 
-                        }
-                    }
-                    post{
-                        success{
-                            jiraComment body: "Version ${env.PKG_VERSION} was added to https://devpi.library.illinois.edu/production/release index.", issueKey: "${params.JIRA_ISSUE_VALUE}"
                         }
                     }
 
