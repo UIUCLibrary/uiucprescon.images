@@ -5,16 +5,29 @@ from typing import Optional
 
 
 class AbsImageConvert(metaclass=abc.ABCMeta):
+    """Abstract baseclass for creating image conversion classes.
+
+    To implement, override the `name` class attribute and the `convert` method
+
+    Attributes:
+        name (str): The human-readable name given to type of file being generated
+        source_file (str): File being used to generate a new image
+        destination_file (str): A file name that the conversion method can use
+            to save to.
+    """
 
     def __init__(self, source_file=None, destination_file=None):
         self._source_file = source_file
         self._destination_file = destination_file
 
-    # name: str = None
-    descriptions: Optional[str] = None
+    description: Optional[str] = None
+    """Description to explain more about the process. This is intended to
+    provide the end-user with any additional information about the process or
+    the resulting file.
+    """
 
     @property
-    def source_file(self):
+    def source_file(self) -> str:
         return self._source_file
 
     @source_file.setter
@@ -22,7 +35,7 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
         self._source_file = value
 
     @property
-    def destination_file(self):
+    def destination_file(self) -> str:
         return self._destination_file
 
     @destination_file.setter
@@ -31,7 +44,8 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def convert(self):
-        pass
+        """Execute the conversion of the source file into a file with the
+        name specified by the destination_file attribute"""
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
@@ -42,6 +56,7 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
 
     @classmethod
     @property
+    @abc.abstractmethod
     def name(cls):
         raise NotImplementedError
 

@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to uiucprescon.imageprocess's documentation!
-====================================================
+Welcome to uiucprescon.images's documentation!
+==============================================
 
 .. toctree::
    :maxdepth: 2
@@ -17,8 +17,7 @@ Welcome to uiucprescon.imageprocess's documentation!
    :maxdepth: 2
    :caption: API:
 
-   uiucprescon.imageprocess
-   formats
+   uiucprescon.images
 
 
 
