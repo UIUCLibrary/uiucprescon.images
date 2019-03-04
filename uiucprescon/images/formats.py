@@ -1,5 +1,4 @@
 import abc
-
 import pykdu_compress  # type: ignore
 from typing import Optional
 
@@ -10,7 +9,8 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
     To implement, override the `name` class attribute and the `convert` method
 
     Attributes:
-        name (str): The human-readable name given to type of file being generated
+        name (str): The human-readable name given to type of file being
+            generated
         source_file (str): File being used to generate a new image
         destination_file (str): A file name that the conversion method can use
             to save to.
