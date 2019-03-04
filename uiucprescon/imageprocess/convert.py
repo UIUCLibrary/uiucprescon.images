@@ -1,9 +1,21 @@
 from typing import Union
 from . import formats
 
-IMAGE_FORMATS = {
-    "hathijp2": formats.HathiJp2()
-}
+import inspect
+
+image_formats = dict()
+
+
+def load_image_formats():
+    for _, subclass in \
+            inspect.getmembers(
+                formats,
+                lambda m: inspect.isclass(m) and not inspect.isabstract(m)):
+
+        if not issubclass(subclass, formats.AbsImageConvert):
+            continue
+
+        image_formats[subclass.name] = subclass()
 
 
 def convert_image(source: str, output_file: str,
@@ -20,8 +32,11 @@ def convert_image(source: str, output_file: str,
     if isinstance(output_format, formats.AbsImageConvert):
         converter = output_format
     else:
-        converter = IMAGE_FORMATS[output_format]
+        converter = image_formats[output_format]
 
     converter.source_file = source
     converter.destination_file = output_file
     converter.convert()
+
+
+load_image_formats()

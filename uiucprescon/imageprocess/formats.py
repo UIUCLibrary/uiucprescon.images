@@ -1,6 +1,7 @@
 import abc
 
 import pykdu_compress  # type: ignore
+from typing import Optional
 
 
 class AbsImageConvert(metaclass=abc.ABCMeta):
@@ -9,7 +10,8 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
         self._source_file = source_file
         self._destination_file = destination_file
 
-    name: str = ""
+    # name: str = None
+    descriptions: Optional[str] = None
 
     @property
     def source_file(self):
@@ -31,8 +33,20 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
     def convert(self):
         pass
 
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+        if cls.name is None:
+            raise TypeError(
+                "Can't instantiate abstract class {} with "
+                "abstract property name".format(cls.__name__))
 
-class HathiJp2(AbsImageConvert):
+    @classmethod
+    @property
+    def name(cls):
+        raise NotImplementedError
+
+
+class HathiJP2(AbsImageConvert):
     """HathiTrust compatible JPEG2000 files"""
 
     name = "HathiTrust JPEG 2000"
@@ -53,3 +67,11 @@ class HathiJp2(AbsImageConvert):
         pykdu_compress.kdu_compress_cli2(self.source_file,
                                          self.destination_file,
                                          kakadu_args)
+
+
+class DigitalLibraryJP2(AbsImageConvert):
+    name = "Digital Library JPEG 2000"
+
+    def convert(self):
+        pykdu_compress.kdu_compress_cli2(
+            self.source_file, self.destination_file)

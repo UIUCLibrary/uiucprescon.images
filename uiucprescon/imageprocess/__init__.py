@@ -1,6 +1,6 @@
-from .convert import convert_image, IMAGE_FORMATS
+from .convert import convert_image, image_formats
 
 __all__ = [
     "convert_image",
-    "IMAGE_FORMATS"
+    "image_formats"
 ]
