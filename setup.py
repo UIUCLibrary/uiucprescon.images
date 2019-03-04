@@ -5,5 +5,6 @@ setup(
     namespace_packages=["uiucprescon"],
     install_requires=["pykdu_compress"],
     setup_requires=['pytest-runner'],
+    test_suite="tests",
     zip_safe=False,
 )
