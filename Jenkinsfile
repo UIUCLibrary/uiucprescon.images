@@ -417,62 +417,62 @@ pipeline {
                             }
                         }
 
-                        stage("Built Distribution: .whl") {
-                            agent {
-                                node {
-                                    label "Windows && Python3 && !Docker"
-                                }
-                            }
-                            options {
-                                skipDefaultCheckout(true)
-                            }
-
-                            stages{
-                                stage("Creating Env for DevPi to test whl"){
-                                    environment{
-                                        PATH = "${tool 'CPython-3.6'};$PATH"
-                                    }
-                                    steps{
-                                        lock("system_python_${NODE_NAME}"){
-                                            bat "python -m pip install pip --upgrade && python -m venv venv "
-                                        }
-                                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\"  detox devpi-client"
-                                    }
-                                }
-                                stage("Testing Whl"){
-                                    options{
-                                        timeout(10)
-                                    }
-                                    environment{
-                                        PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.7'};${PATH}"
-                                    }
-                                    steps {
-                                        devpiTest(
-                                            devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
-                                            url: "https://devpi.library.illinois.edu",
-                                            index: "${env.BRANCH_NAME}_staging",
-                                            pkgName: "${env.PKG_NAME}",
-                                            pkgVersion: "${env.PKG_VERSION}",
-                                            pkgRegex: "whl",
-                                            detox: false
-                                        )
-                                    }
-                                }
-                            }
-
-
-                            post{
-                                failure{
-                                    cleanWs deleteDirs: true, patterns: [[pattern: 'venv', type: 'INCLUDE']]
-                                }
-                                cleanup{
-                                    cleanWs deleteDirs: true, patterns: [
-                                            [pattern: 'certs', type: 'INCLUDE'],
-                                            [pattern: '*tmp', type: 'INCLUDE']
-                                        ]
-                                }
-                            }
-                        }
+//                        stage("Built Distribution: .whl") {
+//                            agent {
+//                                node {
+//                                    label "Windows && Python3 && !Docker"
+//                                }
+//                            }
+//                            options {
+//                                skipDefaultCheckout(true)
+//                            }
+//
+//                            stages{
+//                                stage("Creating Env for DevPi to test whl"){
+//                                    environment{
+//                                        PATH = "${tool 'CPython-3.6'};$PATH"
+//                                    }
+//                                    steps{
+//                                        lock("system_python_${NODE_NAME}"){
+//                                            bat "python -m pip install pip --upgrade && python -m venv venv "
+//                                        }
+//                                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\"  detox devpi-client"
+//                                    }
+//                                }
+//                                stage("Testing Whl"){
+//                                    options{
+//                                        timeout(10)
+//                                    }
+//                                    environment{
+//                                        PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.7'};${PATH}"
+//                                    }
+//                                    steps {
+//                                        devpiTest(
+//                                            devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
+//                                            url: "https://devpi.library.illinois.edu",
+//                                            index: "${env.BRANCH_NAME}_staging",
+//                                            pkgName: "${env.PKG_NAME}",
+//                                            pkgVersion: "${env.PKG_VERSION}",
+//                                            pkgRegex: "whl",
+//                                            detox: false
+//                                        )
+//                                    }
+//                                }
+//                            }
+//
+//
+//                            post{
+//                                failure{
+//                                    cleanWs deleteDirs: true, patterns: [[pattern: 'venv', type: 'INCLUDE']]
+//                                }
+//                                cleanup{
+//                                    cleanWs deleteDirs: true, patterns: [
+//                                            [pattern: 'certs', type: 'INCLUDE'],
+//                                            [pattern: '*tmp', type: 'INCLUDE']
+//                                        ]
+//                                }
+//                            }
+//                        }
                     }
                     post {
                         success {
