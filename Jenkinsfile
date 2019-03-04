@@ -364,7 +364,7 @@ pipeline {
                         stage("Source Distribution: .zip") {
                             agent {
                                 node {
-                                    label "Windows && Python3 && !Docker"
+                                    label "Windows && Python3"
                                 }
                             }
                             options {
