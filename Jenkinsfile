@@ -270,6 +270,7 @@ pipeline {
 
                             }
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                            archiveArtifacts 'reports/coverage.xml'
                             publishCoverage adapters: [
                                             coberturaAdapter('reports/coverage.xml')
                                             ],
