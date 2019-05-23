@@ -271,10 +271,15 @@ pipeline {
                             }
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
                             archiveArtifacts 'reports/coverage.xml'
-                            publishCoverage adapters: [
-                                            coberturaAdapter('reports/coverage.xml')
-                                            ],
-                                        sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                            dir("scm"){
+                                publishCoverage(
+                                    adapters: [
+                                        coberturaAdapter("${WORKSPACE}/reports/coverage.xml")
+                                        ],
+                                    sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                                )
+
+                            }
                         }
                         cleanup{
                             cleanWs(patterns: [
