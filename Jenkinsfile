@@ -277,7 +277,7 @@ pipeline {
                                     adapters: [
                                         coberturaAdapter("coverage.xml")
                                         ],
-                                    sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                                    sourceFileResolver: sourceFiles('STORE_LAST_BUILD')
                                 )
 
                             }
