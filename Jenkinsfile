@@ -286,7 +286,7 @@ pipeline {
                             cleanWs(patterns: [
                                     [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
                                     [pattern: 'reports/coverage', type: 'INCLUDE'],
-                                    [pattern: 'scm/.coverage', type: 'INCLUDE']
+                                    [pattern: 'scm/.coverage', type: 'INCLUDE'],
                                     [pattern: 'scm/coverage.xml', type: 'INCLUDE']
                                 ])
                         }
