@@ -164,7 +164,7 @@ pipeline {
                             }
                             steps{
                                 dir("scm"){
-                                    bat "python -m pipenv run coverage run --parallel-mode --source=uiucprescon -m pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
+                                    bat "python -m pipenv run coverage run --parallel-mode -m pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
                                 }
                             }
                             post {
@@ -270,13 +270,13 @@ pipeline {
 
                             }
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                            archiveArtifacts 'reports/coverage.xml'
                             publishCoverage(
                                 adapters: [
                                     coberturaAdapter("reports/coverage.xml")
                                     ],
                                 sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                             )
+                            archiveArtifacts 'reports/coverage.xml'
                         }
                         cleanup{
                             cleanWs(patterns: [
