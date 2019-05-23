@@ -557,6 +557,7 @@ pipeline {
                     [pattern: 'logs', type: 'INCLUDE'],
                     [pattern: 'dist', type: 'INCLUDE'],
                     [pattern: 'reports', type: 'INCLUDE'],
+                    [pattern: 'build', type: 'INCLUDE'],
                     [pattern: 'scm', type: 'INCLUDE'],
                     [pattern: '*tmp', type: 'INCLUDE']
                 ]
