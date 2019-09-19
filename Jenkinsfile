@@ -278,13 +278,7 @@ pipeline {
                             )
                             archiveArtifacts 'reports/coverage.xml'
                         }
-                        cleanup{
-                            cleanWs(patterns: [
-                                    [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
-                                    [pattern: 'reports/coverage', type: 'INCLUDE'],
-                                    [pattern: 'scm/.coverage', type: 'INCLUDE'],
-                                ])
-                        }
+
                     }
                 }
                 stage("Run SonarQube Analysis"){
@@ -320,6 +314,15 @@ pipeline {
                             }
                         }
                     }
+                }
+            }
+            post{
+                cleanup{
+                    cleanWs(patterns: [
+                            [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
+                            [pattern: 'reports/coverage', type: 'INCLUDE'],
+                            [pattern: 'scm/.coverage', type: 'INCLUDE'],
+                        ])
                 }
             }
         }
