@@ -430,11 +430,9 @@ pipeline {
                             recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                         }
                         cleanup{
-                            cleanWs(deleteDirs: true,
-                                    patterns: [
-                                        [pattern: '	.scannerwork', type: 'INCLUDE'],
-                                        ]
-                                    )
+                            dir(".scannerwork"){
+                                deleteDir()
+                            }
                         }
                     }
                 }
