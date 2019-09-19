@@ -327,8 +327,14 @@ pipeline {
                             }
                             post{
                                 always{
+                                    stash includes: "reports/pylint.txt", name: 'PYLINT_REPORT'
                                     archiveArtifacts allowEmptyArchive: true, artifacts: "reports/pylint.txt"
-                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint_issues.txt')])
+                                    node('Windows') {
+                                        checkout scm
+                                        unstash "PYLINT_REPORT"
+                                        recordIssues(tools: [pyLint(pattern: 'reports/pylint_issues.txt')])
+                                    }
+
                                 }
                             }
                         }
