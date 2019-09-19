@@ -299,7 +299,24 @@ pipeline {
                     steps{
                         withSonarQubeEnv('sonarqube.library.illinois.edu') {
                             withEnv(["PROJECT_DESCRIPTION=${bat(label: 'Getting description metadata', returnStdout: true, script: '@python scm/setup.py --description').trim()}"]) {
-                                    echo "runnning sonarqube"
+                                    bat(
+                                    label: "Running Sonar Scanner",
+                                    script: "${env.scannerHome}/bin/sonar-scanner \
+-Dsonar.projectBaseDir=${WORKSPACE}/scm \
+-Dsonar.python.coverage.reportPaths=reports/coverage.xml \
+-Dsonar.python.xunit.reportPath=reports/pytest/junit-${env.NODE_NAME}-pytest.xml \
+-Dsonar.projectVersion=${PKG_VERSION} \
+-Dsonar.python.bandit.reportPaths=${WORKSPACE}/reports/bandit-report.json \
+-Dsonar.links.ci=${env.JOB_URL} \
+-Dsonar.buildString=${env.BUILD_TAG} \
+-Dsonar.analysis.packageName=${env.PKG_NAME} \
+-Dsonar.analysis.buildNumber=${env.BUILD_NUMBER} \
+-Dsonar.analysis.scmRevision=${env.GIT_COMMIT} \
+-Dsonar.working.directory=${WORKSPACE}\\.scannerwork \
+-Dsonar.python.pylint.reportPath=${WORKSPACE}\\reports\\pylint.txt \
+-Dsonar.projectDescription=\"%PROJECT_DESCRIPTION%\" \
+"
+                                    )
                             }
                         }
                     }
