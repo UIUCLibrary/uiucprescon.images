@@ -298,7 +298,9 @@ pipeline {
                     }
                     steps{
                         withSonarQubeEnv('sonarqube.library.illinois.edu') {
-                            echo "runnning sonarqube"
+                            withEnv(["PROJECT_DESCRIPTION=${bat(label: 'Getting description metadata', returnStdout: true, script: '@python scm/setup.py --description').trim()}"]) {
+                                    echo "runnning sonarqube"
+                            }
                         }
                     }
                 }
