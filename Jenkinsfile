@@ -93,10 +93,6 @@ pipeline {
     }
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
-        booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run PyTest unit tests")
-        booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
-        booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: true, description: "Run Flake8 static analysis")
-        booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
@@ -211,9 +207,6 @@ pipeline {
                 stage("Running Tests"){
                     parallel {
                         stage("Run PyTest Unit Tests"){
-                            when {
-                               equals expected: true, actual: params.TEST_RUN_PYTEST
-                            }
                             steps{
                                 dir("scm"){
                                     bat "python -m pipenv run coverage run --parallel-mode -m pytest --junitxml=${WORKSPACE}/reports/pytest/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest"
@@ -226,9 +219,6 @@ pipeline {
                             }
                         }
                         stage("Run Doctest Tests"){
-                            when {
-                               equals expected: true, actual: params.TEST_RUN_DOCTEST
-                            }
                             steps {
                                 dir("scm"){
                                     bat "python -m pipenv run sphinx-build -b doctest docs ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}\\logs\\doctest.log"
@@ -245,9 +235,6 @@ pipeline {
                             }
                         }
                         stage("Run MyPy Static Analysis") {
-                            when {
-                                equals expected: true, actual: params.TEST_RUN_MYPY
-                            }
                             steps{
                                 dir("scm"){
                                     bat returnStatus: true, script: "pipenv run mypy -p uiucprescon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
@@ -295,9 +282,6 @@ pipeline {
                             }
                         }
                         stage("Run Flake8 Static Analysis") {
-                            when {
-                                equals expected: true, actual: params.TEST_RUN_FLAKE8
-                            }
                             steps{
                                 dir("scm"){
                                     bat returnStatus: true, script: "pipenv run flake8 uiucprescon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
