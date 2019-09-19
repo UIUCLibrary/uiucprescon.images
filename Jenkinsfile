@@ -214,17 +214,14 @@ pipeline {
                             when {
                                equals expected: true, actual: params.TEST_RUN_PYTEST
                             }
-                            environment{
-                                junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
-                            }
                             steps{
                                 dir("scm"){
-                                    bat "python -m pipenv run coverage run --parallel-mode -m pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
+                                    bat "python -m pipenv run coverage run --parallel-mode -m pytest --junitxml=${WORKSPACE}/reports/pytest/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest"
                                 }
                             }
                             post {
                                 always {
-                                    junit "reports/pytest/${junit_filename}"
+                                    junit "reports/pytest/junit-${env.NODE_NAME}-pytest.xml"
                                 }
                             }
                         }
