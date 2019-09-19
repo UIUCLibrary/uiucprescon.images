@@ -327,7 +327,7 @@ pipeline {
                             }
                             post{
                                 always{
-                                    stash includes: "reports/pylint.txt", name: 'PYLINT_REPORT'
+                                    stash includes: "reports/pylint_issues.txt", name: 'PYLINT_REPORT'
                                     archiveArtifacts allowEmptyArchive: true, artifacts: "reports/pylint.txt"
                                     node('Windows') {
                                         checkout scm
