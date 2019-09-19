@@ -370,7 +370,7 @@ pipeline {
                     }
                     steps{
                         withSonarQubeEnv('sonarqube.library.illinois.edu') {
-                            withEnv(["PROJECT_DESCRIPTION=${bat(label: 'Getting description metadata', returnStdout: true, script: '@python scm/setup.py --description').trim()}"]) {
+                            withEnv(["PROJECT_DESCRIPTION=${bat(label: 'Getting description metadata', returnStdout: true, script: '@pipenv run scm/setup.py --description').trim()}"]) {
                                     bat(
                                     label: "Running Sonar Scanner",
                                     script: "${env.scannerHome}/bin/sonar-scanner \
