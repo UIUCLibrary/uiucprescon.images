@@ -261,6 +261,32 @@ pipeline {
                                 }
                             }
                         }
+                        stage("Run Bandit Static Analysis") {
+                            steps{
+                                dir("scm"){
+                                    catchError(buildResult: 'SUCCESS', message: 'Bandit found issues', stageResult: 'UNSTABLE') {
+                                        bat(
+                                            label: "Running bandit",
+                                            script: "pipenv run bandit --format json --output ${WORKSPACE}/reports/bandit-report.json --recursive ${WORKSPACE}\\scm\\uiucprescon\\images || pipenv run bandit -f html --recursive ${WORKSPACE}\\scm\\uiucprescon\\images --output ${WORKSPACE}/reports/bandit-report.html"
+                                        )
+                                    }
+
+                                }
+                            }
+                            post {
+                                always {
+                                    archiveArtifacts "reports/bandit-report.json,reports/bandit-report.html"
+                                }
+                                unstable{
+                                    script{
+                                        if(fileExists('reports/bandit-report.html')){
+                                            parseBanditReport("reports/bandit-report.html")
+                                            addWarningBadge text: "Bandit security issues detected", link: "${currentBuild.absoluteUrl}"
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     post{
