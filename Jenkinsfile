@@ -390,7 +390,7 @@ pipeline {
                     steps{
                         withSonarQubeEnv('sonarqube.library.illinois.edu') {
                             withEnv(["PROJECT_DESCRIPTION=${bat(label: 'Getting description metadata', returnStdout: true, script: '@pipenv run python scm/setup.py --description').trim()}"]) {
-                                    bat(
+                                bat(
                                     label: "Running Sonar Scanner",
                                     script: "${env.scannerHome}/bin/sonar-scanner \
 -Dsonar.projectBaseDir=${WORKSPACE}/scm \
@@ -407,7 +407,7 @@ pipeline {
 -Dsonar.python.pylint.reportPath=${WORKSPACE}\\reports\\pylint.txt \
 -Dsonar.projectDescription=\"%PROJECT_DESCRIPTION%\" \
 "
-                                    )
+                                )
                             }
                         }
                         script{
@@ -428,6 +428,11 @@ pipeline {
                         always{
                             archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
                             recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+                        }
+                        cleanup{
+                            cleanWs(patterns: [
+                                [pattern: '	.scannerwork', type: 'INCLUDE'],
+                                ])
                         }
                     }
                 }
