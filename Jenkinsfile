@@ -14,6 +14,61 @@ def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUse
     }
 }
 
+def parseBanditReport(htmlReport){
+    script {
+        try{
+            def summary = createSummary icon: 'warning.gif', text: "Bandit Security Issues Detected"
+            summary.appendText(readFile("${htmlReport}"))
+
+        } catch (Exception e){
+            echo "Failed to reading ${htmlReport}"
+        }
+    }
+}
+
+def get_sonarqube_unresolved_issues(report_task_file){
+    script{
+
+        def props = readProperties  file: '.scannerwork/report-task.txt'
+        def response = httpRequest url : props['serverUrl'] + "/api/issues/search?componentKeys=" + props['projectKey'] + "&resolved=no"
+        def outstandingIssues = readJSON text: response.content
+        return outstandingIssues
+    }
+}
+
+def get_sonarqube_scan_data(report_task_file){
+    script{
+
+        def props = readProperties  file: '.scannerwork/report-task.txt'
+
+        def ceTaskUrl= props['ceTaskUrl']
+        def response = httpRequest ceTaskUrl
+        def ceTask = readJSON text: response.content
+
+        def response2 = httpRequest url : props['serverUrl'] + "/api/qualitygates/project_status?analysisId=" + ceTask["task"]["analysisId"]
+        def qualitygate =  readJSON text: response2.content
+        return qualitygate
+    }
+}
+
+def get_sonarqube_project_analysis(report_task_file, buildString){
+    def props = readProperties  file: '.scannerwork/report-task.txt'
+    def response = httpRequest url : props['serverUrl'] + "/api/project_analyses/search?project=" + props['projectKey']
+    def project_analyses = readJSON text: response.content
+
+    for( analysis in project_analyses['analyses']){
+        if(!analysis.containsKey("buildString")){
+            continue
+        }
+        def build_string = analysis["buildString"]
+        if(build_string != buildString){
+            continue
+        }
+        return analysis
+    }
+}
+
+
 pipeline {
     agent {
         label "Windows && Python3"
@@ -159,17 +214,14 @@ pipeline {
                             when {
                                equals expected: true, actual: params.TEST_RUN_PYTEST
                             }
-                            environment{
-                                junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
-                            }
                             steps{
                                 dir("scm"){
-                                    bat "python -m pipenv run coverage run --parallel-mode -m pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
+                                    bat "python -m pipenv run coverage run --parallel-mode -m pytest --junitxml=${WORKSPACE}/reports/pytest/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest"
                                 }
                             }
                             post {
                                 always {
-                                    junit "reports/pytest/${junit_filename}"
+                                    junit "reports/pytest/junit-${env.NODE_NAME}-pytest.xml"
                                 }
                             }
                         }
@@ -261,6 +313,51 @@ pipeline {
                                 }
                             }
                         }
+                        stage("Run Pylint Static Analysis") {
+                            steps{
+                                bat "if not exist reports mkdir reports"
+                                dir("scm"){
+                                    catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+                                        bat(
+                                            script: 'pipenv run pylint uiucprescon  -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > %WORKSPACE%\\reports\\pylint.txt & pipenv run pylint uiucprescon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > %WORKSPACE%\\reports\\pylint_issues.txt',
+                                            label: "Running pylint"
+                                        )
+                                    }
+                                }
+                            }
+                            post{
+                                always{
+                                    archiveArtifacts allowEmptyArchive: true, artifacts: "reports/pylint.txt"
+                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint_issues.txt')])
+                                }
+                            }
+                        }
+                        stage("Run Bandit Static Analysis") {
+                            steps{
+                                bat "if not exist reports mkdir reports"
+                                dir("scm"){
+                                    catchError(buildResult: 'SUCCESS', message: 'Bandit found issues', stageResult: 'UNSTABLE') {
+                                        bat(
+                                            label: "Running bandit",
+                                            script: "pipenv run bandit --format json --output ${WORKSPACE}\\reports\\bandit-report.json --recursive ${WORKSPACE}\\scm\\uiucprescon\\images || pipenv run bandit -f html --recursive ${WORKSPACE}\\scm\\uiucprescon\\images --output ${WORKSPACE}/reports/bandit-report.html"
+                                        )
+                                    }
+                                }
+                            }
+                            post {
+                                always {
+                                    archiveArtifacts "reports/bandit-report.json,reports/bandit-report.html"
+                                }
+                                unstable{
+                                    script{
+                                        if(fileExists('reports/bandit-report.html')){
+                                            parseBanditReport("reports/bandit-report.html")
+                                            addWarningBadge text: "Bandit security issues detected", link: "${currentBuild.absoluteUrl}"
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     post{
@@ -278,14 +375,75 @@ pipeline {
                             )
                             archiveArtifacts 'reports/coverage.xml'
                         }
-                        cleanup{
-                            cleanWs(patterns: [
-                                    [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
-                                    [pattern: 'reports/coverage', type: 'INCLUDE'],
-                                    [pattern: 'scm/.coverage', type: 'INCLUDE'],
-                                ])
+
+                    }
+                }
+                stage("Run SonarQube Analysis"){
+                    when{
+                        equals expected: "master", actual: env.BRANCH_NAME
+                    }
+
+                    environment{
+                        scannerHome = tool name: 'sonar-scanner-3.3.0', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+
+                    }
+                    steps{
+                        withSonarQubeEnv('sonarqube.library.illinois.edu') {
+                            withEnv(["PROJECT_DESCRIPTION=${bat(label: 'Getting description metadata', returnStdout: true, script: '@pipenv run python scm/setup.py --description').trim()}"]) {
+                                bat(
+                                    label: "Running Sonar Scanner",
+                                    script: "${env.scannerHome}/bin/sonar-scanner \
+-Dsonar.projectBaseDir=${WORKSPACE}/scm \
+-Dsonar.python.coverage.reportPaths=reports/coverage.xml \
+-Dsonar.python.xunit.reportPath=reports/pytest/junit-${env.NODE_NAME}-pytest.xml \
+-Dsonar.projectVersion=${PKG_VERSION} \
+-Dsonar.python.bandit.reportPaths=${WORKSPACE}/reports/bandit-report.json \
+-Dsonar.links.ci=${env.JOB_URL} \
+-Dsonar.buildString=${env.BUILD_TAG} \
+-Dsonar.analysis.packageName=${env.PKG_NAME} \
+-Dsonar.analysis.buildNumber=${env.BUILD_NUMBER} \
+-Dsonar.analysis.scmRevision=${env.GIT_COMMIT} \
+-Dsonar.working.directory=${WORKSPACE}\\.scannerwork \
+-Dsonar.python.pylint.reportPath=${WORKSPACE}\\reports\\pylint.txt \
+-Dsonar.projectDescription=\"%PROJECT_DESCRIPTION%\" \
+"
+                                )
+                            }
+                        }
+                        script{
+
+                            def sonarqube_result = waitForQualityGate abortPipeline: false
+                            if(sonarqube_result.status != "OK"){
+                                unstable("SonarQube quality gate: ${sonarqube_result}")
+                            }
+                            def sonarqube_data = get_sonarqube_scan_data(".scannerwork/report-task.txt")
+                            echo sonarqube_data.toString()
+
+                            echo get_sonarqube_project_analysis(".scannerwork/report-task.txt", BUILD_TAG).toString()
+                            def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
+                            writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
                         }
                     }
+                    post{
+                        always{
+                            archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
+                            recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+                        }
+                        cleanup{
+                            dir(".scannerwork"){
+                                deleteDir()
+                            }
+                        }
+                    }
+                }
+            }
+            post{
+                cleanup{
+                    cleanWs(patterns: [
+                            [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
+                            [pattern: 'reports/coverage', type: 'INCLUDE'],
+                            [pattern: 'scm/.coverage', type: 'INCLUDE'],
+                        ])
                 }
             }
         }
