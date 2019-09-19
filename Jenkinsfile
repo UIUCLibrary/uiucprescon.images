@@ -313,6 +313,25 @@ pipeline {
                                 }
                             }
                         }
+                        stage("Run Pylint Static Analysis") {
+                            steps{
+                                bat "if not exist reports mkdir reports"
+                                dir("scm"){
+                                    catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+                                        bat(
+                                            script: 'pipenv run pylint uiucprescon  -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > %WORKSPACE%\\reports\\pylint.txt & pylint uiucprescon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > %WORKSPACE%\\reports\\pylint_issues.txt',
+                                            label: "Running pylint"
+                                        )
+                                    }
+                                }
+                            }
+                            post{
+                                always{
+                                    archiveArtifacts allowEmptyArchive: true, artifacts: "reports/pylint.txt"
+                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint_issues.txt')])
+                                }
+                            }
+                        }
                         stage("Run Bandit Static Analysis") {
                             steps{
                                 bat "if not exist reports mkdir reports"
