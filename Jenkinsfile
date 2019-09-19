@@ -14,6 +14,61 @@ def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUse
     }
 }
 
+def parseBanditReport(htmlReport){
+    script {
+        try{
+            def summary = createSummary icon: 'warning.gif', text: "Bandit Security Issues Detected"
+            summary.appendText(readFile("${htmlReport}"))
+
+        } catch (Exception e){
+            echo "Failed to reading ${htmlReport}"
+        }
+    }
+}
+
+def get_sonarqube_unresolved_issues(report_task_file){
+    script{
+
+        def props = readProperties  file: '.scannerwork/report-task.txt'
+        def response = httpRequest url : props['serverUrl'] + "/api/issues/search?componentKeys=" + props['projectKey'] + "&resolved=no"
+        def outstandingIssues = readJSON text: response.content
+        return outstandingIssues
+    }
+}
+
+def get_sonarqube_scan_data(report_task_file){
+    script{
+
+        def props = readProperties  file: '.scannerwork/report-task.txt'
+
+        def ceTaskUrl= props['ceTaskUrl']
+        def response = httpRequest ceTaskUrl
+        def ceTask = readJSON text: response.content
+
+        def response2 = httpRequest url : props['serverUrl'] + "/api/qualitygates/project_status?analysisId=" + ceTask["task"]["analysisId"]
+        def qualitygate =  readJSON text: response2.content
+        return qualitygate
+    }
+}
+
+def get_sonarqube_project_analysis(report_task_file, buildString){
+    def props = readProperties  file: '.scannerwork/report-task.txt'
+    def response = httpRequest url : props['serverUrl'] + "/api/project_analyses/search?project=" + props['projectKey']
+    def project_analyses = readJSON text: response.content
+
+    for( analysis in project_analyses['analyses']){
+        if(!analysis.containsKey("buildString")){
+            continue
+        }
+        def build_string = analysis["buildString"]
+        if(build_string != buildString){
+            continue
+        }
+        return analysis
+    }
+}
+
+
 pipeline {
     agent {
         label "Windows && Python3"
@@ -263,14 +318,14 @@ pipeline {
                         }
                         stage("Run Bandit Static Analysis") {
                             steps{
+                                bat "if not exist reports mkdir reports"
                                 dir("scm"){
                                     catchError(buildResult: 'SUCCESS', message: 'Bandit found issues', stageResult: 'UNSTABLE') {
                                         bat(
                                             label: "Running bandit",
-                                            script: "pipenv run bandit --format json --output ${WORKSPACE}/reports/bandit-report.json --recursive ${WORKSPACE}\\scm\\uiucprescon\\images || pipenv run bandit -f html --recursive ${WORKSPACE}\\scm\\uiucprescon\\images --output ${WORKSPACE}/reports/bandit-report.html"
+                                            script: "pipenv run bandit --format json --output ${WORKSPACE}\\reports\\bandit-report.json --recursive ${WORKSPACE}\\scm\\uiucprescon\\images || pipenv run bandit -f html --recursive ${WORKSPACE}\\scm\\uiucprescon\\images --output ${WORKSPACE}/reports/bandit-report.html"
                                         )
                                     }
-
                                 }
                             }
                             post {
