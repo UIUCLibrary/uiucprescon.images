@@ -107,11 +107,6 @@ pipeline {
     }
     environment {
         WORKON_HOME ="${WORKSPACE}\\pipenv"
-        PKG_NAME = pythonPackageName(toolName: "CPython-3.6")
-        PKG_VERSION = pythonPackageVersion(toolName: "CPython-3.6")
-        DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
-        DEVPI = credentials("DS_devpi")
-
     }
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
@@ -188,11 +183,6 @@ pipeline {
                     }
                 }
             }
-            post{
-                always{
-                    echo "Configured ${env.PKG_NAME}, version ${env.PKG_VERSION}, for testing."
-                }
-            }
         }
         stage('Build') {
             environment{
@@ -210,6 +200,10 @@ pipeline {
                     }
                 }
                 stage("Sphinx Documentation"){
+                    environment{
+                        PKG_NAME = get_package_name("DIST-INFO", "uiucprescon.images.dist-info/METADATA")
+                        PKG_VERSION = get_package_version("DIST-INFO", "uiucprescon.images.dist-info/METADATA")
+                    }
                     steps {
                         echo "Building docs on ${env.NODE_NAME}"
                         dir("scm"){
@@ -223,15 +217,18 @@ pipeline {
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${env.DOC_ZIP_FILENAME}"
-                            stash includes: "dist/${env.DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
+                            script{
+                                def DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
+                                zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
+                                stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
+                            }
 
                         }
                         cleanup{
                             cleanWs(patterns:
                                     [
                                         [pattern: 'logs/build_sphinx.log', type: 'INCLUDE'],
-                                        [pattern: "dist/${env.DOC_ZIP_FILENAME}", type: 'INCLUDE']
+                                        [pattern: "dist/*.docs.zip", type: 'INCLUDE']
                                     ]
                                 )
                         }
@@ -415,7 +412,8 @@ pipeline {
 
                     environment{
                         scannerHome = tool name: 'sonar-scanner-3.3.0', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-
+                        PKG_NAME = get_package_name("DIST-INFO", "uiucprescon.images.dist-info/METADATA")
+                        PKG_VERSION = get_package_version("DIST-INFO", "uiucprescon.images.dist-info/METADATA")
                     }
                     steps{
                         withSonarQubeEnv('sonarqube.library.illinois.edu') {
@@ -532,9 +530,12 @@ pipeline {
             options{
                 timestamps()
             }
-//            environment{
+            environment{
+                PKG_NAME = pythonPackageName(toolName: "CPython-3.6")
+                PKG_VERSION = pythonPackageVersion(toolName: "CPython-3.6")
+                DEVPI = credentials("DS_devpi")
 //                PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-//            }
+            }
 
             stages{
                 stage("Installing DevPi Client"){
