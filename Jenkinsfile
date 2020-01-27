@@ -454,34 +454,29 @@ pipeline {
             }
         }
         stage("Packaging") {
-            environment{
-                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+            agent {
+                dockerfile {
+                    filename 'ci/docker/python37/windows/build/msvc/Dockerfile'
+                    label 'Windows&&Docker'
+                 }
             }
-            failFast true
-            parallel {
-                stage("Source and Wheel formats"){
-                    stages{
+            stages{
+                stage("Packaging sdist and wheel"){
 
-                        stage("Packaging sdist and wheel"){
-
-                            steps{
-                                bat script: "python -m pipenv run python setup.py build -b ../build sdist -d ../dist --format zip bdist_wheel -d ../dist"
-                            }
-                            post {
-                                success {
-                                    archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
-                                    stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
-                                }
-                                cleanup{
-                                    cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', type: 'INCLUDE']]
-                                }
-                            }
+                    steps{
+                        bat script: "python setup.py build -b ../build sdist -d ../dist --format zip bdist_wheel -d ../dist"
+                    }
+                    post {
+                        success {
+                            archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
+                            stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
+                        }
+                        cleanup{
+                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', type: 'INCLUDE']]
                         }
                     }
                 }
             }
-
-
         }
         stage("Deploy to DevPi"){
             when {
