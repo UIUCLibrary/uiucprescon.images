@@ -460,21 +460,23 @@ pipeline {
                     label 'Windows&&Docker'
                  }
             }
-            stages{
-                stage("Packaging sdist and wheel"){
-
-                    steps{
-                        bat script: "python setup.py build -b build sdist -d dist --format zip bdist_wheel -d dist"
-                    }
-                    post {
-                        success {
-                            archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
-                            stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
-                        }
-                        cleanup{
-                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', type: 'INCLUDE']]
-                        }
-                    }
+            steps{
+                bat script: "python setup.py build -b build sdist -d dist --format zip bdist_wheel -d dist"
+            }
+            post {
+                success {
+                    archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
+                    stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
+                }
+                cleanup{
+                    cleanWs(
+                        deleteDirs: true,
+                        patterns: [
+                            [pattern: 'dist/', type: 'INCLUDE'],
+                            [pattern: 'build/', type: 'INCLUDE'],
+                            [pattern: "uiucprescon.images.egg-info/", type: 'INCLUDE'],
+                        ]
+                    )
                 }
             }
         }
