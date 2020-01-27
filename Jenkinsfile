@@ -144,92 +144,38 @@ pipeline {
                 }
             }
         }
-//         stage("Configure"){
-//             environment{
-//                 PATH = "${tool 'CPython-3.6'};${PATH}"
-//             }
-//             stages{
-//                 stage("Initial setup"){
-//                     parallel{
-//                         stage("Purge all existing data in workspace"){
-//                             when{
-//                                 anyOf{
-//                                     equals expected: true, actual: params.FRESH_WORKSPACE
-//                                     triggeredBy "TimerTriggerCause"
-//                                 }
-//                             }
-//                             steps{
-//                                 deleteDir()
-//                                 dir("scm"){
-//                                    checkout scm
-//                                 }
-//                             }
-//                         }
-//                     }
-//                 }
-//                 stage("Getting Distribution Info"){
-//                     agent {
-//                                 dockerfile {
-//                                     filename 'ci\\docker\\python37\\Dockerfile'
-//                                     label 'Windows&&Docker'
-//                                  }
-//                             }
-//                     environment{
-//                         PATH = "${tool 'CPython-3.7'};$PATH"
-//                     }
-//                     steps{
-//                         bat "python setup.py dist_info"
-//                     }
-//                     post{
-//                         success{
-//                             stash includes: "uiucprescon.images.dist-info/**", name: 'DIST-INFO'
-//                             archiveArtifacts artifacts: "uiucprescon.images.dist-info/**"
-//                         }
-//                     }
-//                 }
-//                 stage("Installing Pipfile"){
-//                     options{
-//                         timeout(5)
-//                     }
-//                     steps {
-//                         bat "if not exist logs mkdir logs"
-//                         bat "python -m pipenv install --dev --deploy && python -m pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log && python -m pipenv check"
-//                     }
-//                     post{
-//                         always{
-//                             archiveArtifacts artifacts: "logs/pippackages_pipenv_*.log"
-//                         }
-//                         failure {
-//                             deleteDir()
-//                         }
-//                         cleanup{
-//                             cleanWs(patterns: [[pattern: "logs/pippackages_pipenv_*.log", type: 'INCLUDE']])
-//                         }
-//                     }
-//                 }
-//             }
-//         }
         stage('Build') {
-            environment{
-                PATH = "${tool 'CPython-3.6'};${PATH}"
-            }
             parallel {
                 stage("Python Package"){
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/python37/windows/build/msvc/Dockerfile'
+                            label 'Windows&&Docker'
+                         }
+                    }
                     steps {
-
-                        lock("system_pipenv_${NODE_NAME}"){
-                            bat "python -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
-                        }
+                        bat "if not exist logs mkdir logs"
+                        bat "python setup.py build -b ${WORKSPACE}\\build"
                     }
                 }
                 stage("Sphinx Documentation"){
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/python37/windows/build/msvc/Dockerfile'
+                            label 'Windows&&Docker'
+                         }
+                    }
                     environment{
                         PKG_NAME = get_package_name("DIST-INFO", "uiucprescon.images.dist-info/METADATA")
                         PKG_VERSION = get_package_version("DIST-INFO", "uiucprescon.images.dist-info/METADATA")
                     }
                     steps {
-                        echo "Building docs on ${env.NODE_NAME}"
-                        bat "python -m pipenv run sphinx-build docs ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx.log"
+                        bat "if not exist logs mkdir logs"
+                        bat(
+                            label: "Building docs on ${env.NODE_NAME}",
+                            script: "python -m sphinx docs ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx.log"
+                            )
+
                     }
                     post{
                         always {
@@ -258,25 +204,46 @@ pipeline {
             }
         }
         stage("Test") {
-            environment{
-                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+            agent {
+                dockerfile {
+                    filename 'ci/docker/python37/windows/build/msvc/Dockerfile'
+                    label 'Windows&&Docker'
+                 }
             }
+//             environment{
+//                 PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+//             }
             stages{
+                stage("Setting up Tests"){
+                    steps{
+                        bat "if not exist reports mkdir reports"
+                        bat "if not exist logs mkdir logs"
+                    }
+                }
                 stage("Running Tests"){
                     parallel {
                         stage("Run PyTest Unit Tests"){
                             steps{
-                                bat "python -m pipenv run coverage run --parallel-mode -m pytest --junitxml=${WORKSPACE}/reports/pytest/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest"
+                                bat "coverage run --parallel-mode -m pytest --junitxml=${WORKSPACE}/reports/pytest/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest"
                             }
                             post {
                                 always {
                                     junit "reports/pytest/junit-${env.NODE_NAME}-pytest.xml"
                                 }
+                                cleanup{
+                                    cleanWs(
+                                        patterns: [
+                                            [pattern: 'reports/pytest/junit-*.xml', type: 'INCLUDE'],
+                                            [pattern: '.pytest_cache/', type: 'INCLUDE'],
+                                        ],
+                                        deleteDirs: true,
+                                    )
+                                }
                             }
                         }
                         stage("Run Doctest Tests"){
                             steps {
-                                bat "python -m pipenv run sphinx-build -b doctest docs ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}\\logs\\doctest.log"
+                                bat "sphinx-build -b doctest docs ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}\\logs\\doctest.log"
         //                            bat "pipenv run sphinx-build -b doctest docs\\scm ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees"
                             }
                             post{
@@ -290,7 +257,7 @@ pipeline {
                         }
                         stage("Run MyPy Static Analysis") {
                             steps{
-                                bat returnStatus: true, script: "pipenv run mypy -p uiucprescon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
+                                bat returnStatus: true, script: "mypy -p uiucprescon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
                             }
                             post {
                                 always {
@@ -300,7 +267,13 @@ pipeline {
                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                                 }
                                 cleanup{
-                                    cleanWs(patterns: [[pattern: 'logs/mypy.log', type: 'INCLUDE']])
+                                    cleanWs(
+                                        patterns: [
+                                            [pattern: 'logs/mypy.log', type: 'INCLUDE'],
+                                            [pattern: '.mypy_cache/', type: 'INCLUDE'],
+                                        ],
+                                        deleteDirs: true,
+                                    )
                                 }
                             }
                         }
@@ -309,13 +282,7 @@ pipeline {
                                 equals expected: true, actual: params.TEST_RUN_TOX
                             }
                             steps {
-                                script{
-                                    try{
-                                      bat "python -m pipenv run tox.exe --parallel=auto --parallel-live --workdir ${WORKSPACE}\\tox"
-                                    } catch (exc) {
-                                      bat "python -m pipenv run tox.exe --parallel=auto --parallel-live --workdir ${WORKSPACE}\\tox -vv --recreate"
-                                    }
-                                }
+                                  bat "tox --workdir ${WORKSPACE}\\tox -e py"
                             }
                             post {
                                 always {
@@ -325,17 +292,15 @@ pipeline {
                                 cleanup{
                                     cleanWs(
                                         patterns: [
-                                                [pattern: 'tox/**/*.log', type: 'INCLUDE']
-                                            ]
-                                        )
+                                            [pattern: 'tox/**/*.log', type: 'INCLUDE']
+                                        ]
+                                    )
                                 }
                             }
                         }
                         stage("Run Flake8 Static Analysis") {
                             steps{
-                                dir("scm"){
-                                    bat returnStatus: true, script: "pipenv run flake8 uiucprescon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
-                                }
+                                bat returnStatus: true, script: "flake8 uiucprescon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                             }
                             post {
                                 always {
@@ -349,34 +314,27 @@ pipeline {
                         }
                         stage("Run Pylint Static Analysis") {
                             steps{
-                                bat "if not exist reports mkdir reports"
                                 catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
                                     bat(
-                                        script: 'pipenv run pylint uiucprescon  -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > %WORKSPACE%\\reports\\pylint.txt & pipenv run pylint uiucprescon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > %WORKSPACE%\\reports\\pylint_issues.txt',
+                                        script: 'pylint uiucprescon  -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > %WORKSPACE%\\reports\\pylint.txt & pipenv run pylint uiucprescon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > %WORKSPACE%\\reports\\pylint_issues.txt',
                                         label: "Running pylint"
                                     )
                                 }
                             }
                             post{
                                 always{
-                                    stash includes: "reports/pylint_issues.txt", name: 'PYLINT_REPORT'
                                     archiveArtifacts allowEmptyArchive: true, artifacts: "reports/pylint.txt"
-                                    node('Windows') {
-                                        checkout scm
-                                        unstash "PYLINT_REPORT"
-                                        recordIssues(tools: [pyLint(pattern: 'reports/pylint_issues.txt')])
-                                    }
+                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint_issues.txt')])
 
                                 }
                             }
                         }
                         stage("Run Bandit Static Analysis") {
                             steps{
-                                bat "if not exist reports mkdir reports"
                                 catchError(buildResult: 'SUCCESS', message: 'Bandit found issues', stageResult: 'UNSTABLE') {
                                     bat(
                                         label: "Running bandit",
-                                        script: "pipenv run bandit --format json --output ${WORKSPACE}\\reports\\bandit-report.json --recursive ${WORKSPACE}\\scm\\uiucprescon\\images || pipenv run bandit -f html --recursive ${WORKSPACE}\\scm\\uiucprescon\\images --output ${WORKSPACE}/reports/bandit-report.html"
+                                        script: "bandit --format json --output ${WORKSPACE}\\reports\\bandit-report.json --recursive ${WORKSPACE}\\uiucprescon\\images || pipenv run bandit -f html --recursive ${WORKSPACE}\\uiucprescon\\images --output ${WORKSPACE}/reports/bandit-report.html"
                                     )
                                 }
                             }
@@ -398,7 +356,7 @@ pipeline {
 
                     post{
                         always{
-                            bat "\"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage combine && \"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && \"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
+                            bat "coverage combine && coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && coverage html -d ${WORKSPACE}\\reports\\coverage"
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
                             publishCoverage(
                                 adapters: [
@@ -407,6 +365,16 @@ pipeline {
                                 sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                             )
                             archiveArtifacts 'reports/coverage.xml'
+                        }
+                        cleanup{
+                            cleanWs(
+                                patterns: [
+                                    [pattern: 'build/', type: 'INCLUDE'],
+                                    [pattern: 'logs/', type: 'INCLUDE'],
+                                    [pattern: 'reports/', type: 'INCLUDE'],
+                                ],
+                                deleteDirs: true,
+                            )
                         }
 
                     }
@@ -423,7 +391,7 @@ pipeline {
                     }
                     steps{
                         withSonarQubeEnv('sonarqube.library.illinois.edu') {
-                            withEnv(["PROJECT_DESCRIPTION=${bat(label: 'Getting description metadata', returnStdout: true, script: '@pipenv run python scm/setup.py --description').trim()}"]) {
+                            withEnv(["PROJECT_DESCRIPTION=${bat(label: 'Getting description metadata', returnStdout: true, script: '@pipenv run python setup.py --description').trim()}"]) {
                                 bat(
                                     label: "Running Sonar Scanner",
                                     script: "${env.scannerHome}/bin/sonar-scanner \
@@ -460,15 +428,8 @@ pipeline {
                     }
                     post{
                         always{
-                            stash includes: "reports/sonar-report.json", name: 'SONAR_REPORT'
                             archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
-                            node('Windows') {
-                                checkout scm
-                                unstash 'SONAR_REPORT'
-                                recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
-                            }
-
-
+                            recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                         }
                         cleanup{
                             dir(".scannerwork"){
