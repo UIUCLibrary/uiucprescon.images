@@ -464,7 +464,7 @@ pipeline {
                 stage("Packaging sdist and wheel"){
 
                     steps{
-                        bat script: "python setup.py build -b ../build sdist -d ../dist --format zip bdist_wheel -d ../dist"
+                        bat script: "python setup.py build -b build sdist -d dist --format zip bdist_wheel -d dist"
                     }
                     post {
                         success {
