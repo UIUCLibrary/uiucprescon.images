@@ -138,7 +138,7 @@ pipeline {
                         deleteDirs: true,
                         patterns: [
                             [pattern: "uiucprescon.images.dist-info/", type: 'INCLUDE'],
-                            [pattern: "uiucprescon.images.egg-info/", type: 'INCLUDE'],
+
                             [pattern: ".eggs/", type: 'INCLUDE'],
                         ]
                     )
@@ -375,6 +375,7 @@ pipeline {
                                     [pattern: 'build/', type: 'INCLUDE'],
                                     [pattern: 'logs/', type: 'INCLUDE'],
                                     [pattern: 'reports/', type: 'INCLUDE'],
+                                    [pattern: "uiucprescon.images.egg-info/", type: 'INCLUDE'],
                                 ],
                                 deleteDirs: true,
                             )
