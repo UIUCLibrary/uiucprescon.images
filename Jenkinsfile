@@ -118,11 +118,37 @@ pipeline {
     }
 
     stages {
-        stage("Configure"){
-            environment{
-                PATH = "${tool 'CPython-3.6'};${PATH}"
+        stage("Getting Distribution Info"){
+            agent {
+                dockerfile {
+                    filename 'ci/docker/python37/windows/build/msvc/Dockerfile'
+                    label 'Windows&&Docker'
+                 }
             }
-            stages{
+            steps{
+                bat "python setup.py dist_info"
+            }
+            post{
+                success{
+                    stash includes: "uiucprescon.images.dist-info/**", name: 'DIST-INFO'
+                    archiveArtifacts artifacts: "uiucprescon.images.dist-info/**"
+                }
+                cleanup{
+                    cleanWs(
+                        deleteDirs: true,
+                        patterns: [
+                            [pattern: "uiucprescon.images.dist-info/", type: 'INCLUDE'],
+                            [pattern: ".eggs/", type: 'INCLUDE'],
+                        ]
+                    )
+                }
+            }
+        }
+//         stage("Configure"){
+//             environment{
+//                 PATH = "${tool 'CPython-3.6'};${PATH}"
+//             }
+//             stages{
 //                 stage("Initial setup"){
 //                     parallel{
 //                         stage("Purge all existing data in workspace"){
@@ -141,42 +167,48 @@ pipeline {
 //                         }
 //                     }
 //                 }
-                stage("Getting Distribution Info"){
-                    environment{
-                        PATH = "${tool 'CPython-3.7'};$PATH"
-                    }
-                    steps{
-                        bat "python setup.py dist_info"
-                    }
-                    post{
-                        success{
-                            stash includes: "uiucprescon.images.dist-info/**", name: 'DIST-INFO'
-                            archiveArtifacts artifacts: "uiucprescon.images.dist-info/**"
-                        }
-                    }
-                }
-                stage("Installing Pipfile"){
-                    options{
-                        timeout(5)
-                    }
-                    steps {
-                        bat "if not exist logs mkdir logs"
-                        bat "python -m pipenv install --dev --deploy && python -m pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log && python -m pipenv check"
-                    }
-                    post{
-                        always{
-                            archiveArtifacts artifacts: "logs/pippackages_pipenv_*.log"
-                        }
-                        failure {
-                            deleteDir()
-                        }
-                        cleanup{
-                            cleanWs(patterns: [[pattern: "logs/pippackages_pipenv_*.log", type: 'INCLUDE']])
-                        }
-                    }
-                }
-            }
-        }
+//                 stage("Getting Distribution Info"){
+//                     agent {
+//                                 dockerfile {
+//                                     filename 'ci\\docker\\python37\\Dockerfile'
+//                                     label 'Windows&&Docker'
+//                                  }
+//                             }
+//                     environment{
+//                         PATH = "${tool 'CPython-3.7'};$PATH"
+//                     }
+//                     steps{
+//                         bat "python setup.py dist_info"
+//                     }
+//                     post{
+//                         success{
+//                             stash includes: "uiucprescon.images.dist-info/**", name: 'DIST-INFO'
+//                             archiveArtifacts artifacts: "uiucprescon.images.dist-info/**"
+//                         }
+//                     }
+//                 }
+//                 stage("Installing Pipfile"){
+//                     options{
+//                         timeout(5)
+//                     }
+//                     steps {
+//                         bat "if not exist logs mkdir logs"
+//                         bat "python -m pipenv install --dev --deploy && python -m pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log && python -m pipenv check"
+//                     }
+//                     post{
+//                         always{
+//                             archiveArtifacts artifacts: "logs/pippackages_pipenv_*.log"
+//                         }
+//                         failure {
+//                             deleteDir()
+//                         }
+//                         cleanup{
+//                             cleanWs(patterns: [[pattern: "logs/pippackages_pipenv_*.log", type: 'INCLUDE']])
+//                         }
+//                     }
+//                 }
+//             }
+//         }
         stage('Build') {
             environment{
                 PATH = "${tool 'CPython-3.6'};${PATH}"
