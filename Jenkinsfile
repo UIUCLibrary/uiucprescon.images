@@ -138,6 +138,7 @@ pipeline {
                         deleteDirs: true,
                         patterns: [
                             [pattern: "uiucprescon.images.dist-info/", type: 'INCLUDE'],
+                            [pattern: "uiucprescon.images.egg-info/", type: 'INCLUDE'],
                             [pattern: ".eggs/", type: 'INCLUDE'],
                         ]
                     )
