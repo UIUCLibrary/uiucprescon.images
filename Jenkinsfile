@@ -713,17 +713,17 @@ pipeline {
         }
 
     }
-    post {
-        cleanup {
-
-            cleanWs deleteDirs: true, patterns: [
-                    [pattern: 'logs', type: 'INCLUDE'],
-                    [pattern: 'dist', type: 'INCLUDE'],
-                    [pattern: 'reports', type: 'INCLUDE'],
-                    [pattern: 'build', type: 'INCLUDE'],
-                    [pattern: '*tmp', type: 'INCLUDE']
-                ]
-        }
-
-    }
+//     post {
+//         cleanup {
+//
+//             cleanWs deleteDirs: true, patterns: [
+//                     [pattern: 'logs', type: 'INCLUDE'],
+//                     [pattern: 'dist', type: 'INCLUDE'],
+//                     [pattern: 'reports', type: 'INCLUDE'],
+//                     [pattern: 'build', type: 'INCLUDE'],
+//                     [pattern: '*tmp', type: 'INCLUDE']
+//                 ]
+//         }
+//
+//     }
 }
