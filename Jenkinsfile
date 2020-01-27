@@ -386,6 +386,7 @@ pipeline {
                 stage("Run SonarQube Analysis"){
                     when{
                         equals expected: "master", actual: env.BRANCH_NAME
+                        beforeAgent true
                     }
 
                     environment{
