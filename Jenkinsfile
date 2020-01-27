@@ -144,7 +144,6 @@ pipeline {
                         deleteDirs: true,
                         patterns: [
                             [pattern: "uiucprescon.images.dist-info/", type: 'INCLUDE'],
-
                             [pattern: ".eggs/", type: 'INCLUDE'],
                         ]
                     )
@@ -182,7 +181,6 @@ pipeline {
                             label: "Building docs on ${env.NODE_NAME}",
                             script: "python -m sphinx docs ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx.log"
                             )
-
                     }
                     post{
                         always {
@@ -219,9 +217,6 @@ pipeline {
                     label 'Windows&&Docker'
                  }
             }
-//             environment{
-//                 PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-//             }
             stages{
                 stage("Setting up Tests"){
                     steps{
@@ -253,7 +248,6 @@ pipeline {
                         stage("Run Doctest Tests"){
                             steps {
                                 bat "sphinx-build -b doctest docs ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}\\logs\\doctest.log"
-        //                            bat "pipenv run sphinx-build -b doctest docs\\scm ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees"
                             }
                             post{
                                 always {
@@ -272,7 +266,6 @@ pipeline {
                                 always {
                                     archiveArtifacts "logs\\mypy.log"
                                     recordIssues(tools: [myPy(pattern: 'logs/mypy.log')])
-
                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                                 }
                                 cleanup{
@@ -334,7 +327,6 @@ pipeline {
                                 always{
                                     archiveArtifacts allowEmptyArchive: true, artifacts: "reports/pylint.txt"
                                     recordIssues(tools: [pyLint(pattern: 'reports/pylint_issues.txt')])
-
                                 }
                             }
                         }
@@ -362,7 +354,6 @@ pipeline {
                             }
                         }
                     }
-
                     post{
                         always{
                             bat "coverage combine && coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && coverage html -d ${WORKSPACE}\\reports\\coverage"
@@ -386,7 +377,6 @@ pipeline {
                                 deleteDirs: true,
                             )
                         }
-
                     }
                 }
                 stage("Run SonarQube Analysis"){
@@ -394,7 +384,6 @@ pipeline {
                         equals expected: "master", actual: env.BRANCH_NAME
                         beforeAgent true
                     }
-
                     environment{
                         scannerHome = tool name: 'sonar-scanner-3.3.0', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                         PKG_NAME = get_package_name("DIST-INFO", "uiucprescon.images.dist-info/METADATA")
@@ -424,7 +413,6 @@ pipeline {
                             }
                         }
                         script{
-
                             def sonarqube_result = waitForQualityGate abortPipeline: false
                             if(sonarqube_result.status != "OK"){
                                 unstable("SonarQube quality gate: ${sonarqube_result}")
@@ -505,12 +493,8 @@ pipeline {
             }
             agent none
             environment{
-//                 PKG_NAME = get_package_name("DIST-INFO", "uiucprescon.images.dist-info/METADATA")
-//                 PKG_VERSION = get_package_version("DIST-INFO", "uiucprescon.images.dist-info/METADATA")
                 DEVPI = credentials("DS_devpi")
-//                PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
             }
-
             stages{
                 stage("Deploy to Devpi Staging") {
                     agent {
@@ -590,169 +574,11 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
                     }
                 }
             }
-            //    stage("Installing DevPi Client"){
-            //        environment{
-            //            PATH = "${tool 'CPython-3.6'};${PATH}"
-            //        }
-            //        steps{
-            //            bat "python -m venv venv\\36"
-            //            bat "venv\\36\\Scripts\\python.exe -m pip install pip --upgrade && venv\\36\\Scripts\\pip install devpi-client"
-            //        }
-            //    }
-            //    stage("Deploy to DevPi Staging") {
-            //        environment{
-            //            PATH = "${WORKSPACE}\\venv\\36\\Scripts;${PATH}"
-            //        }
-            //        steps {
-            //            unstash 'DOCS_ARCHIVE'
-            //            unstash 'PYTHON_PACKAGES'
-            //            bat "devpi use https://devpi.library.illinois.edu && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
-            //        }
-            //    }
-            //    stage("Test DevPi packages") {
-            //        parallel {
-            //            stage("Source Distribution: .zip") {
-            //                agent {
-            //                    node {
-            //                        label "Windows && Python3"
-            //                    }
-            //                }
-            //                options {
-            //                    skipDefaultCheckout(true)
-            //                }
-            //                stages{
-            //                    stage("Creating Env for DevPi to test sdist"){
-            //                        environment{
-            //                            PATH = "${tool 'CPython-3.6'};${PATH}"
-            //                        }
-            //                        steps {
-            //                            lock("system_python_${NODE_NAME}"){
-            //                                bat "python -m venv venv"
-            //                            }
-            //                            bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
-            //                        }
-            //                    }
-            //                    stage("Testing sdist"){
-            //                        environment{
-            //                            PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.7'}${PATH}"
-            //                        }
-            //                        options{
-            //                            timeout(10)
-            //                        }
-            //                        steps{
-            //                            bat "devpi use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
-            //                            devpiTest(
-            //                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
-            //                                url: "https://devpi.library.illinois.edu",
-            //                                index: "${env.BRANCH_NAME}_staging",
-            //                                pkgName: "${env.PKG_NAME}",
-            //                                pkgVersion: "${env.PKG_VERSION}",
-            //                                pkgRegex: "zip",
-            //                                detox: false
-            //                            )
-            //                        }
-            //                    }
-            //                }
-            //                post{
-            //                    cleanup{
-            //                        cleanWs deleteDirs: true, patterns: [
-            //                                [pattern: 'certs', type: 'INCLUDE'],
-            //                                [pattern: '*tmp', type: 'INCLUDE']
-            //                            ]
-            //                    }
-            //                }
-            //            }
-            //            stage("Built Distribution: .whl") {
-            //                agent {
-            //                    node {
-            //                        label "Windows && Python3"
-            //                    }
-            //                }
-            //                options {
-            //                    skipDefaultCheckout(true)
-            //                }
-            //                stages{
-            //                    stage("Creating Env for DevPi to test whl"){
-            //                        environment{
-            //                            PATH = "${tool 'CPython-3.6'};$PATH"
-            //                        }
-            //                        steps{
-            //                            lock("system_python_${NODE_NAME}"){
-            //                                bat "python -m pip install pip --upgrade && python -m venv venv "
-            //                            }
-            //                            bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\"  detox devpi-client"
-            //                        }
-            //                    }
-            //                    stage("Testing Whl"){
-            //                        options{
-            //                            timeout(10)
-            //                        }
-            //                        environment{
-            //                            PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.7'};${PATH}"
-            //                        }
-            //                        steps {
-            //                            devpiTest(
-            //                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
-            //                                url: "https://devpi.library.illinois.edu",
-            //                                index: "${env.BRANCH_NAME}_staging",
-            //                                pkgName: "${env.PKG_NAME}",
-            //                                pkgVersion: "${env.PKG_VERSION}",
-            //                                pkgRegex: "whl",
-            //                                detox: false
-            //                            )
-            //                        }
-            //                    }
-            //                }
-            //                post{
-            //                    failure{
-            //                        cleanWs deleteDirs: true, patterns: [[pattern: 'venv', type: 'INCLUDE']]
-            //                    }
-            //                    cleanup{
-            //                        cleanWs deleteDirs: true, patterns: [
-            //                                [pattern: 'certs', type: 'INCLUDE'],
-            //                                [pattern: '*tmp', type: 'INCLUDE']
-            //                            ]
-            //                    }
-            //                }
-            //            }
-            //        }
-            //        post {
-            //            success {
-            //                echo "It Worked. Pushing file to ${env.BRANCH_NAME} index"
-            //                bat "venv\\36\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging && venv\\36\\Scripts\\devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\36\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\36\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
-            //            }
-            //        }
-            //    }
-            //    stage("Deploy to DevPi Production") {
-            //        when {
-            //            allOf{
-            //                equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
-            //                branch "master"
-            //            }
-            //        }
-            //        stages{
-            //            stage("Pushing to DevPi Production"){
-            //                input {
-            //                    message "Release to DevPi Production?"
-            //                }
-            //                steps {
-//          //                      input "Release ${env.PKG_NAME} ${env.PKG_VERSION} to DevPi Production?"
-            //                    bat "venv\\36\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\36\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\36\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} production/release"
-            //                }
-            //            }
-            //        }
-            //    }
-            //}
-            //post{
-            //    cleanup{
-            //        remove_from_devpi("venv\\36\\Scripts\\devpi.exe", "${env.PKG_NAME}", "${env.PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
-            //    }
-            //}
             post{
                 success{
                     node('linux && docker') {
                        script{
-                            docker.build("dcc_qc:devpi.${env.BUILD_ID}",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("uiucpresconimages:devpi.${env.BUILD_ID}",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
                                 unstash "DIST-INFO"
                                 def props = readProperties interpolate: true, file: 'uiucprescon.images.dist-info/METADATA'
                                 sh(
@@ -774,7 +600,7 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
                 cleanup{
                     node('linux && docker') {
                        script{
-                            docker.build("dcc_qc:devpi.${env.BUILD_ID}",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("uiucpresconimages:devpi.${env.BUILD_ID}",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
                                 unstash "DIST-INFO"
                                 def props = readProperties interpolate: true, file: 'uiucprescon.images.dist-info/METADATA'
                                 sh(
@@ -798,12 +624,12 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
         stage("Deploy"){
             parallel {
                 stage("Deploy Online Documentation") {
+                    agent any
                     when{
                         equals expected: true, actual: params.DEPLOY_DOCS
                     }
                     steps{
                         unstash "DOCS_ARCHIVE"
-
                         dir("build/docs/html/"){
                             input 'Update project documentation?'
                             sshPublisher(
@@ -831,22 +657,7 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
                         }
                     }
                 }
-
             }
         }
-
     }
-//     post {
-//         cleanup {
-//
-//             cleanWs deleteDirs: true, patterns: [
-//                     [pattern: 'logs', type: 'INCLUDE'],
-//                     [pattern: 'dist', type: 'INCLUDE'],
-//                     [pattern: 'reports', type: 'INCLUDE'],
-//                     [pattern: 'build', type: 'INCLUDE'],
-//                     [pattern: '*tmp', type: 'INCLUDE']
-//                 ]
-//         }
-//
-//     }
 }
