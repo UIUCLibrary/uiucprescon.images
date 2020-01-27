@@ -92,16 +92,17 @@ def get_package_name(stashName, metadataFile){
 }
 
 pipeline {
-    agent {
-        label "Windows && Python3"
-    }
+    agent none
+//     agent {
+//         label "Windows && Python3"
+//     }
     triggers {
         cron('@daily')
     }
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
 //        timeout(25)  // Timeout after 20 minutes. This shouldn't take this long but it hangs for some reason
-        checkoutToSubdirectory("scm")
+//         checkoutToSubdirectory("scm")
         buildDiscarder logRotator(artifactDaysToKeepStr: '10', artifactNumToKeepStr: '10')
         preserveStashes(buildCount: 5)
     }
@@ -122,39 +123,35 @@ pipeline {
                 PATH = "${tool 'CPython-3.6'};${PATH}"
             }
             stages{
-                stage("Initial setup"){
-                    parallel{
-                        stage("Purge all existing data in workspace"){
-                            when{
-                                anyOf{
-                                    equals expected: true, actual: params.FRESH_WORKSPACE
-                                    triggeredBy "TimerTriggerCause"
-                                }
-                            }
-                            steps{
-                                deleteDir()
-                                dir("scm"){
-                                   checkout scm
-                                }
-                            }
-                        }
-                    }
-                }
+//                 stage("Initial setup"){
+//                     parallel{
+//                         stage("Purge all existing data in workspace"){
+//                             when{
+//                                 anyOf{
+//                                     equals expected: true, actual: params.FRESH_WORKSPACE
+//                                     triggeredBy "TimerTriggerCause"
+//                                 }
+//                             }
+//                             steps{
+//                                 deleteDir()
+//                                 dir("scm"){
+//                                    checkout scm
+//                                 }
+//                             }
+//                         }
+//                     }
+//                 }
                 stage("Getting Distribution Info"){
                     environment{
                         PATH = "${tool 'CPython-3.7'};$PATH"
                     }
                     steps{
-                        dir("scm"){
-                            bat "python setup.py dist_info"
-                        }
+                        bat "python setup.py dist_info"
                     }
                     post{
                         success{
-                            dir("scm"){
-                                stash includes: "uiucprescon.images.dist-info/**", name: 'DIST-INFO'
-                                archiveArtifacts artifacts: "uiucprescon.images.dist-info/**"
-                            }
+                            stash includes: "uiucprescon.images.dist-info/**", name: 'DIST-INFO'
+                            archiveArtifacts artifacts: "uiucprescon.images.dist-info/**"
                         }
                     }
                 }
@@ -164,9 +161,7 @@ pipeline {
                     }
                     steps {
                         bat "if not exist logs mkdir logs"
-                        dir("scm"){
-                            bat "python -m pipenv install --dev --deploy && python -m pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log && python -m pipenv check"
-                        }
+                        bat "python -m pipenv install --dev --deploy && python -m pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log && python -m pipenv check"
                     }
                     post{
                         always{
@@ -190,10 +185,8 @@ pipeline {
                 stage("Python Package"){
                     steps {
 
-                        dir("scm"){
-                            lock("system_pipenv_${NODE_NAME}"){
-                                bat "python -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
-                            }
+                        lock("system_pipenv_${NODE_NAME}"){
+                            bat "python -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
                         }
                     }
                 }
@@ -204,9 +197,7 @@ pipeline {
                     }
                     steps {
                         echo "Building docs on ${env.NODE_NAME}"
-                        dir("scm"){
-                            bat "python -m pipenv run sphinx-build docs ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx.log"
-                        }
+                        bat "python -m pipenv run sphinx-build docs ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx.log"
                     }
                     post{
                         always {
@@ -243,9 +234,7 @@ pipeline {
                     parallel {
                         stage("Run PyTest Unit Tests"){
                             steps{
-                                dir("scm"){
-                                    bat "python -m pipenv run coverage run --parallel-mode -m pytest --junitxml=${WORKSPACE}/reports/pytest/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest"
-                                }
+                                bat "python -m pipenv run coverage run --parallel-mode -m pytest --junitxml=${WORKSPACE}/reports/pytest/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest"
                             }
                             post {
                                 always {
@@ -255,10 +244,8 @@ pipeline {
                         }
                         stage("Run Doctest Tests"){
                             steps {
-                                dir("scm"){
-                                    bat "python -m pipenv run sphinx-build -b doctest docs ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}\\logs\\doctest.log"
+                                bat "python -m pipenv run sphinx-build -b doctest docs ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}\\logs\\doctest.log"
         //                            bat "pipenv run sphinx-build -b doctest docs\\scm ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees"
-                                }
                             }
                             post{
                                 always {
@@ -271,9 +258,7 @@ pipeline {
                         }
                         stage("Run MyPy Static Analysis") {
                             steps{
-                                dir("scm"){
-                                    bat returnStatus: true, script: "pipenv run mypy -p uiucprescon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
-                                }
+                                bat returnStatus: true, script: "pipenv run mypy -p uiucprescon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
                             }
                             post {
                                 always {
@@ -292,13 +277,11 @@ pipeline {
                                 equals expected: true, actual: params.TEST_RUN_TOX
                             }
                             steps {
-                                dir("scm"){
-                                    script{
-                                        try{
-                                          bat "python -m pipenv run tox.exe --parallel=auto --parallel-live --workdir ${WORKSPACE}\\tox"
-                                        } catch (exc) {
-                                          bat "python -m pipenv run tox.exe --parallel=auto --parallel-live --workdir ${WORKSPACE}\\tox -vv --recreate"
-                                        }
+                                script{
+                                    try{
+                                      bat "python -m pipenv run tox.exe --parallel=auto --parallel-live --workdir ${WORKSPACE}\\tox"
+                                    } catch (exc) {
+                                      bat "python -m pipenv run tox.exe --parallel=auto --parallel-live --workdir ${WORKSPACE}\\tox -vv --recreate"
                                     }
                                 }
                             }
@@ -335,13 +318,11 @@ pipeline {
                         stage("Run Pylint Static Analysis") {
                             steps{
                                 bat "if not exist reports mkdir reports"
-                                dir("scm"){
-                                    catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-                                        bat(
-                                            script: 'pipenv run pylint uiucprescon  -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > %WORKSPACE%\\reports\\pylint.txt & pipenv run pylint uiucprescon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > %WORKSPACE%\\reports\\pylint_issues.txt',
-                                            label: "Running pylint"
-                                        )
-                                    }
+                                catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+                                    bat(
+                                        script: 'pipenv run pylint uiucprescon  -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > %WORKSPACE%\\reports\\pylint.txt & pipenv run pylint uiucprescon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > %WORKSPACE%\\reports\\pylint_issues.txt',
+                                        label: "Running pylint"
+                                    )
                                 }
                             }
                             post{
@@ -360,13 +341,11 @@ pipeline {
                         stage("Run Bandit Static Analysis") {
                             steps{
                                 bat "if not exist reports mkdir reports"
-                                dir("scm"){
-                                    catchError(buildResult: 'SUCCESS', message: 'Bandit found issues', stageResult: 'UNSTABLE') {
-                                        bat(
-                                            label: "Running bandit",
-                                            script: "pipenv run bandit --format json --output ${WORKSPACE}\\reports\\bandit-report.json --recursive ${WORKSPACE}\\scm\\uiucprescon\\images || pipenv run bandit -f html --recursive ${WORKSPACE}\\scm\\uiucprescon\\images --output ${WORKSPACE}/reports/bandit-report.html"
-                                        )
-                                    }
+                                catchError(buildResult: 'SUCCESS', message: 'Bandit found issues', stageResult: 'UNSTABLE') {
+                                    bat(
+                                        label: "Running bandit",
+                                        script: "pipenv run bandit --format json --output ${WORKSPACE}\\reports\\bandit-report.json --recursive ${WORKSPACE}\\scm\\uiucprescon\\images || pipenv run bandit -f html --recursive ${WORKSPACE}\\scm\\uiucprescon\\images --output ${WORKSPACE}/reports/bandit-report.html"
+                                    )
                                 }
                             }
                             post {
@@ -387,10 +366,7 @@ pipeline {
 
                     post{
                         always{
-                            dir("scm"){
-                                bat "\"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage combine && \"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && \"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
-
-                            }
+                            bat "\"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage combine && \"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && \"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
                             publishCoverage(
                                 adapters: [
@@ -419,7 +395,7 @@ pipeline {
                                 bat(
                                     label: "Running Sonar Scanner",
                                     script: "${env.scannerHome}/bin/sonar-scanner \
--Dsonar.projectBaseDir=${WORKSPACE}/scm \
+-Dsonar.projectBaseDir=${WORKSPACE} \
 -Dsonar.python.coverage.reportPaths=reports/coverage.xml \
 -Dsonar.python.xunit.reportPath=reports/pytest/junit-${env.NODE_NAME}-pytest.xml \
 -Dsonar.projectVersion=${PKG_VERSION} \
@@ -475,7 +451,6 @@ pipeline {
                     cleanWs(patterns: [
                             [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
                             [pattern: 'reports/coverage', type: 'INCLUDE'],
-                            [pattern: 'scm/.coverage', type: 'INCLUDE'],
                         ])
                 }
             }
@@ -492,9 +467,7 @@ pipeline {
                         stage("Packaging sdist and wheel"){
 
                             steps{
-                                dir("scm"){
-                                    bat script: "python -m pipenv run python setup.py build -b ../build sdist -d ../dist --format zip bdist_wheel -d ../dist"
-                                }
+                                bat script: "python -m pipenv run python setup.py build -b ../build sdist -d ../dist --format zip bdist_wheel -d ../dist"
                             }
                             post {
                                 success {
@@ -755,7 +728,6 @@ pipeline {
                     [pattern: 'dist', type: 'INCLUDE'],
                     [pattern: 'reports', type: 'INCLUDE'],
                     [pattern: 'build', type: 'INCLUDE'],
-                    [pattern: 'scm', type: 'INCLUDE'],
                     [pattern: '*tmp', type: 'INCLUDE']
                 ]
         }
