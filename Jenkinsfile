@@ -322,11 +322,25 @@ pipeline {
                                         label: "Running pylint"
                                     )
                                 }
+                                script{
+                                    if(env.BRANCH_NAME == "master"){
+                                        bat(
+                                            script: 'pylint uiucprescon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports\\pylint_issues.txt',
+                                            label: "Running pylint for sonarqube",
+                                            returnStatus: true
+                                        )
+                                    }
+                                }
                             }
                             post{
                                 always{
                                     archiveArtifacts allowEmptyArchive: true, artifacts: "reports/pylint.txt"
                                     recordIssues(tools: [pyLint(pattern: 'reports/pylint_issues.txt')])
+                                    stash(
+                                        name: 'PYLINT_SONAR_REPORT',
+                                        includes: "reports\\pylint_issues.txt",
+                                        allowEmpty: true
+                                        )
                                 }
                             }
                         }
@@ -342,6 +356,7 @@ pipeline {
                             post {
                                 always {
                                     archiveArtifacts "reports/bandit-report.json,reports/bandit-report.html"
+                                    stash( includes: "reports/bandit-report.json", name: 'BANDIT_REPORT')
                                 }
                                 unstable{
                                     script{
@@ -404,6 +419,8 @@ pipeline {
             steps{
                 unstash "DIST-INFO"
                 unstash "COVERAGE_REPORT"
+                unstash "BANDIT_REPORT"
+                unstash "PYLINT_SONAR_REPORT"
                 script{
                     def props = readProperties interpolate: true, file: 'uiucprescon.images.dist-info/METADATA'
                     withSonarQubeEnv('sonarqube.library.illinois.edu') {
