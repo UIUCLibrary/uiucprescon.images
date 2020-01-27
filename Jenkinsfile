@@ -193,12 +193,14 @@ pipeline {
 
                         }
                         cleanup{
-                            cleanWs(patterns:
-                                    [
-                                        [pattern: 'logs/build_sphinx.log', type: 'INCLUDE'],
-                                        [pattern: "dist/*.docs.zip", type: 'INCLUDE']
-                                    ]
-                                )
+                            cleanWs(
+                                patterns: [
+                                    [pattern: 'logs/', type: 'INCLUDE'],
+                                    [pattern: "build/docs/", type: 'INCLUDE'],
+                                    [pattern: "dist/", type: 'INCLUDE']
+                                ],
+                                deleteDirs: true
+                            )
                         }
                     }
                 }
