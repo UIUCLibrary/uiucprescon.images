@@ -39,8 +39,10 @@ def parseBanditReport(htmlReport){
 
 def get_sonarqube_unresolved_issues(report_task_file){
     script{
-
-        def props = readProperties  file: '.scannerwork/report-task.txt'
+        if (! fileExists(report_task_file)){
+            error "File not found ${report_task_file}"
+        }
+        def props = readProperties  file: report_task_file
         def response = httpRequest url : props['serverUrl'] + "/api/issues/search?componentKeys=" + props['projectKey'] + "&resolved=no"
         def outstandingIssues = readJSON text: response.content
         return outstandingIssues
@@ -49,21 +51,31 @@ def get_sonarqube_unresolved_issues(report_task_file){
 
 def get_sonarqube_scan_data(report_task_file){
     script{
-
-        def props = readProperties  file: '.scannerwork/report-task.txt'
+        if (! fileExists(report_task_file)){
+            error "File not found ${report_task_file}"
+        }
+        def props = readProperties  file: report_task_file
 
         def ceTaskUrl= props['ceTaskUrl']
         def response = httpRequest ceTaskUrl
         def ceTask = readJSON text: response.content
+        def analysisId = ceTask["task"]["analysisId"]
+         if(analysisId == null){
+            error "Unable to parse analysisId from ${report_task_file}"
+        }
 
-        def response2 = httpRequest url : props['serverUrl'] + "/api/qualitygates/project_status?analysisId=" + ceTask["task"]["analysisId"]
+        def response2 = httpRequest url : props['serverUrl'] + "/api/qualitygates/project_status?analysisId=" + analysisId
         def qualitygate =  readJSON text: response2.content
         return qualitygate
     }
 }
 
 def get_sonarqube_project_analysis(report_task_file, buildString){
-    def props = readProperties  file: '.scannerwork/report-task.txt'
+    if (! fileExists(report_task_file)){
+            error "File not found ${report_task_file}"
+        }
+    def props = readProperties  file: report_task_file
+
     def response = httpRequest url : props['serverUrl'] + "/api/project_analyses/search?project=" + props['projectKey']
     def project_analyses = readJSON text: response.content
 
