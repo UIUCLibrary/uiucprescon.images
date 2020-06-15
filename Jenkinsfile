@@ -1,17 +1,152 @@
 #!groovy
 @Library(["devpi", "PythonHelpers"]) _
 
-CONFIGURATIONS = [
-    '3.6': [
-        test_docker_image: "python:3.6-windowsservercore",
-        tox_env: "py36"
-        ],
-    "3.7": [
-        test_docker_image: "python:3.7",
-        tox_env: "py37"
-        ]
-]
 
+def CONFIGURATIONS = [
+    "3.7" : [
+        os: [
+            windows: [
+                agents: [
+                    build: [
+                        dockerfile: [
+                            filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
+                            label: 'Windows&&Docker',
+                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
+                        ]
+                    ],
+                    test: [
+                        dockerfile: [
+                            filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
+                            label: 'Windows&&Docker',
+                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
+                        ]
+                    ],
+                    devpi: [
+                        dockerfile: [
+                            filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
+                            label: 'Windows && Docker',
+                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
+                        ]
+                    ]
+                ],
+                pkgRegex: [
+                    wheel: "*.whl",
+                    sdist: "*.zip"
+                ]
+            ],
+            linux: [
+                agents: [
+                    build: [
+                        dockerfile: [
+                            filename: 'ci/docker/python/linux/Dockerfile',
+                            label: 'linux&&docker',
+                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        ]
+                    ],
+                    test: [
+                        dockerfile: [
+                            filename: 'ci/docker/python/linux/Dockerfile',
+                            label: 'linux&&docker',
+                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        ]
+                    ],
+                    devpi: [
+                        dockerfile: [
+                            filename: 'ci/docker/python/linux/Dockerfile',
+                            label: 'linux&&docker',
+                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        ]
+                    ]
+                ],
+                pkgRegex: [
+                    wheel: "*.whl",
+                    sdist: "*.zip"
+                ]
+            ]
+        ],
+        tox_env: "py37",
+        devpiSelector: [
+            sdist: "zip",
+            wheel: "whl",
+        ],
+        pkgRegex: [
+            wheel: "*.whl",
+            sdist: "*.zip"
+        ]
+    ],
+    "3.8" : [
+        os: [
+            windows: [
+                agents: [
+                    build: [
+                        dockerfile: [
+                            filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
+                            label: 'Windows&&Docker',
+                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
+                        ]
+                    ],
+                    test: [
+                        dockerfile: [
+                            filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
+                            label: 'Windows && Docker',
+                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
+                        ]
+                    ],
+                    devpi: [
+                        dockerfile: [
+                            filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
+                            label: 'Windows && Docker',
+                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
+                        ]
+                    ]
+
+                ],
+                pkgRegex: [
+                    wheel: "*.whl",
+                    sdist: "*.zip"
+                ]
+            ],
+            linux: [
+                agents: [
+                    build: [
+                        dockerfile: [
+                            filename: 'ci/docker/python/linux/Dockerfile',
+                            label: 'linux&&docker',
+                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        ]
+                    ],
+                    test: [
+                        dockerfile: [
+                            filename: 'ci/docker/python/linux/Dockerfile',
+                            label: 'linux&&docker',
+                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        ]
+                    ],
+                    devpi: [
+                        dockerfile: [
+                            filename: 'ci/docker/python/linux/Dockerfile',
+                            label: 'linux&&docker',
+                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        ]
+                    ]
+                ],
+                pkgRegex: [
+                    wheel: "*.whl",
+                    sdist: "*.zip"
+                ]
+            ]
+        ],
+        tox_env: "py38",
+        devpiSelector: [
+            sdist: "zip",
+            wheel: "whl",
+        ],
+        pkgRegex: [
+            wheel: "*.whl",
+            sdist: "*.zip"
+        ]
+    ],
+]
 def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUsername, devpiPassword){
     script {
             try {
@@ -521,6 +656,96 @@ pipeline {
                                     [pattern: "uiucprescon.images.egg-info/", type: 'INCLUDE'],
                                 ]
                             )
+                        }
+                    }
+                }
+                stage("Testing Packages"){
+                    options{
+                        timestamps()
+                    }
+                    matrix{
+                        axes {
+                            axis {
+                                name 'PYTHON_VERSION'
+                                values(
+                                    '3.8',
+                                    '3.7',
+                                    '3.6'
+                                )
+                            }
+                            axis {
+                                name 'PLATFORM'
+                                values(
+                                    "windows",
+                                    "linux"
+                                )
+                            }
+                            axis {
+                                name 'FORMAT'
+                                values(
+                                    "wheel",
+                                    "sdist"
+                                )
+                            }
+                        }
+                        excludes{
+                            exclude {
+                                axis {
+                                    name 'PLATFORM'
+                                    values 'linux'
+                                }
+                                axis {
+                                    name 'FORMAT'
+                                    values 'wheel'
+                                }
+                            }
+                        }
+                        stages{
+                            stage("Testing Packages"){
+                                agent {
+                                    dockerfile {
+                                        filename "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.test.dockerfile.filename}"
+                                        label "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.test.dockerfile.label}"
+                                        additionalBuildArgs "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.test.dockerfile.additionalBuildArgs}"
+                                     }
+                                }
+                                steps{
+                                    script{
+                                        if (FORMAT == "wheel"){
+                                            unstash "wheel"
+                                        }
+                                        else{
+                                            unstash "sdist"
+                                        }
+                                        findFiles( glob: "dist/**/${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].pkgRegex[FORMAT]}").each{
+                                            if(isUnix()){
+                                                sh(
+                                                    label: "Testing ${it}",
+                                                    script: "tox --installpkg=${it.path} -e py -v"
+                                                    )
+                                            } else {
+                                                bat(
+                                                    label: "Testing ${it}",
+                                                    script: "tox --installpkg=${it.path} -e py -v"
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                post{
+                                    cleanup{
+                                        cleanWs(
+                                            notFailBuild: true,
+                                            deleteDirs: true,
+                                            patterns: [
+                                                    [pattern: 'dist', type: 'INCLUDE'],
+                                                    [pattern: 'build', type: 'INCLUDE'],
+                                                    [pattern: '.tox', type: 'INCLUDE'],
+                                                ]
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
