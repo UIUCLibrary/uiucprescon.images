@@ -168,22 +168,16 @@ pipeline {
                 stage("Python Package"){
                     agent {
                         dockerfile {
-                            filename 'ci/docker/python/windows/build/msvc/Dockerfile'
-                            label 'Windows&&Docker'
+                            filename 'ci/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                          }
                     }
                     steps {
-                        bat "if not exist logs mkdir logs"
-                        bat "python setup.py build -b ${WORKSPACE}\\build"
+                        sh "python setup.py build -b build"
                     }
                 }
                 stage("Sphinx Documentation"){
-//                     agent {
-//                         dockerfile {
-//                             filename 'ci/docker/python/windows/build/msvc/Dockerfile'
-//                             label 'Windows&&Docker'
-//                          }
-//                     }
                     agent{
                         dockerfile {
                             filename 'ci/docker/python/linux/Dockerfile'
@@ -238,24 +232,27 @@ pipeline {
             }
         }
         stage("Test") {
-            agent {
+            agent{
                 dockerfile {
-                    filename 'ci/docker/python/windows/build/msvc/Dockerfile'
-                    label 'Windows&&Docker'
-                 }
+                    filename 'ci/docker/python/linux/Dockerfile'
+                    label 'linux && docker'
+                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                }
             }
             stages{
-                stage("Setting up Tests"){
-                    steps{
-                        bat "if not exist reports mkdir reports"
-                        bat "if not exist logs mkdir logs"
-                    }
-                }
+//                 stage("Setting up Tests"){
+//                     steps{
+//                         bat "if not exist reports mkdir reports"
+//                         bat "if not exist logs mkdir logs"
+//                     }
+//                 }
                 stage("Running Tests"){
                     parallel {
                         stage("Run PyTest Unit Tests"){
                             steps{
-                                bat "coverage run --parallel-mode -m pytest --junitxml=${WORKSPACE}/reports/pytest/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest"
+                                catchError(buildResult: 'UNSTABLE', message: 'PyTest found issues', stageResult: 'UNSTABLE') {
+                                    sh "coverage run --parallel-mode -m pytest --junitxml=reports/pytest/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest"
+                                }
                             }
                             post {
                                 always {
@@ -274,7 +271,9 @@ pipeline {
                         }
                         stage("Run Doctest Tests"){
                             steps {
-                                bat "sphinx-build -b doctest docs ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}\\logs\\doctest.log"
+                                catchError(buildResult: 'SUCCESS', message: 'DocTest found issues', stageResult: 'UNSTABLE') {
+                                    sh "python -m sphinx -b doctest docs build/docs -d build/docs/doctrees -w logs/doctest.log"
+                                }
                             }
                             post{
                                 always {
@@ -287,11 +286,15 @@ pipeline {
                         }
                         stage("Run MyPy Static Analysis") {
                             steps{
-                                bat returnStatus: true, script: "mypy -p uiucprescon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
+                                catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
+                                    sh(label:"Running MyPy",
+                                       script: "mypy -p uiucprescon --html-report reports/mypy/html | tee logs/mypy.log"
+                                       )
+                               }
                             }
                             post {
                                 always {
-                                    archiveArtifacts "logs\\mypy.log"
+                                    archiveArtifacts "logs/mypy.log"
                                     recordIssues(tools: [myPy(pattern: 'logs/mypy.log')])
                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                                 }
@@ -311,7 +314,7 @@ pipeline {
                                 equals expected: true, actual: params.TEST_RUN_TOX
                             }
                             steps {
-                                  bat "tox --workdir ${WORKSPACE}\\tox -e py"
+                                  sh "tox --workdir tox -e py"
                             }
                             post {
                                 always {
@@ -329,7 +332,10 @@ pipeline {
                         }
                         stage("Run Flake8 Static Analysis") {
                             steps{
-                                bat returnStatus: true, script: "flake8 uiucprescon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
+                                catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
+                                    sh(label:"Runnig Flake8",
+                                       script: "flake8 uiucprescon --tee --output-file=logs/flake8.log")
+                                }
                             }
                             post {
                                 always {
@@ -344,20 +350,22 @@ pipeline {
                         stage("Run Pylint Static Analysis") {
                             steps{
                                 catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-                                    bat(
-                                        script: 'pylint uiucprescon  -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > %WORKSPACE%\\reports\\pylint.txt & pylint uiucprescon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > %WORKSPACE%\\reports\\pylint_issues.txt',
-                                        label: "Running pylint"
+                                    sh(label: "Running pylint",
+                                       script: '''pylint uiucprescon  -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt
+                                                   pylint uiucprescon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint_issues.txt
+                                                   '''
+
                                     )
                                 }
-                                script{
-                                    if(env.BRANCH_NAME == "master"){
-                                        bat(
-                                            script: 'pylint uiucprescon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports\\pylint_issues.txt',
-                                            label: "Running pylint for sonarqube",
-                                            returnStatus: true
-                                        )
-                                    }
-                                }
+//                                 script{
+//                                     if(env.BRANCH_NAME == "master"){
+//                                         bat(
+//                                             script: 'pylint uiucprescon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports\\pylint_issues.txt',
+//                                             label: "Running pylint for sonarqube",
+//                                             returnStatus: true
+//                                         )
+//                                     }
+//                                 }
                             }
                             post{
                                 always{
@@ -365,7 +373,7 @@ pipeline {
                                     recordIssues(tools: [pyLint(pattern: 'reports/pylint_issues.txt')])
                                     stash(
                                         name: 'PYLINT_SONAR_REPORT',
-                                        includes: "reports\\pylint_issues.txt",
+                                        includes: "reports/pylint_issues.txt",
                                         allowEmpty: true
                                         )
                                 }
@@ -374,9 +382,9 @@ pipeline {
                         stage("Run Bandit Static Analysis") {
                             steps{
                                 catchError(buildResult: 'SUCCESS', message: 'Bandit found issues', stageResult: 'UNSTABLE') {
-                                    bat(
+                                    sh(
                                         label: "Running bandit",
-                                        script: "bandit --format json --output ${WORKSPACE}\\reports\\bandit-report.json --recursive ${WORKSPACE}\\uiucprescon\\images || bandit -f html --recursive ${WORKSPACE}\\uiucprescon\\images --output ${WORKSPACE}/reports/bandit-report.html"
+                                        script: "bandit --format json --output reports/bandit-report.json --recursive uiucprescon/images || bandit -f html --recursive uiucprescon/images --output ${WORKSPACE}/reports/bandit-report.html"
                                     )
                                 }
                             }
@@ -398,7 +406,7 @@ pipeline {
                     }
                     post{
                         always{
-                            bat "coverage combine && coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && coverage html -d ${WORKSPACE}\\reports\\coverage"
+                            sh "coverage combine && coverage xml -o reports/coverage.xml && coverage html -d reports/coverage"
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
                             publishCoverage(
                                 adapters: [
