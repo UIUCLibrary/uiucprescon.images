@@ -139,12 +139,13 @@ pipeline {
         stage("Getting Distribution Info"){
             agent {
                 dockerfile {
-                    filename 'ci/docker/python/windows/build/msvc/Dockerfile'
-                    label 'Windows&&Docker'
+                    filename 'ci/docker/python/linux/Dockerfile'
+                    label 'linux && docker'
+                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                  }
             }
             steps{
-                bat "python setup.py dist_info"
+                sh "python setup.py dist_info"
             }
             post{
                 success{
