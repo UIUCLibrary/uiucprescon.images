@@ -359,7 +359,7 @@ pipeline {
                             post{
                                 always{
                                     archiveArtifacts allowEmptyArchive: true, artifacts: "reports/pylint.txt"
-                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint_issues.txt')])
+                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
                                     stash(
                                         name: 'PYLINT_SONAR_REPORT',
                                         includes: "reports/pylint_issues.txt",
