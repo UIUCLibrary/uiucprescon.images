@@ -849,29 +849,23 @@ pipeline {
 
                                         if(isUnix()){
                                             sh(
-                                                label: "Connecting to DevPi index",
+                                                label: "Running tests on DevPi",
                                                 script: """python --version
                                                            devpi use https://devpi.library.illinois.edu --clientdir certs
                                                            devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir certs
                                                            devpi use ${env.BRANCH_NAME}_staging --clientdir certs
+                                                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${CONFIGURATIONS[PYTHON_VERSION].devpiSelector[FORMAT]} --clientdir certs -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v
                                                        """
-                                            )
-                                            sh(
-                                                label: "Running tests on Devpi",
-                                                script: "devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${CONFIGURATIONS[PYTHON_VERSION].devpiSelector[FORMAT]} --clientdir certs -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v"
                                             )
                                         } else {
                                             bat(
-                                                label: "Connecting to DevPi index",
+                                                label: "Running tests on DevPi",
                                                 script: """python --version
                                                            devpi use https://devpi.library.illinois.edu --clientdir certs\\
                                                            devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\
                                                            devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\
+                                                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${CONFIGURATIONS[PYTHON_VERSION].devpiSelector[FORMAT]} --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v
                                                            """
-                                            )
-                                            bat(
-                                                label: "Running tests on Devpi",
-                                                script: "devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${CONFIGURATIONS[PYTHON_VERSION].devpiSelector[FORMAT]} --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v"
                                             )
                                         }
                                     }
