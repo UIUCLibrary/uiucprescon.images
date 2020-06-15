@@ -178,22 +178,36 @@ pipeline {
                     }
                 }
                 stage("Sphinx Documentation"){
-                    agent {
+//                     agent {
+//                         dockerfile {
+//                             filename 'ci/docker/python/windows/build/msvc/Dockerfile'
+//                             label 'Windows&&Docker'
+//                          }
+//                     }
+                    agent{
                         dockerfile {
-                            filename 'ci/docker/python/windows/build/msvc/Dockerfile'
-                            label 'Windows&&Docker'
-                         }
+                            filename 'ci/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        }
                     }
                     environment{
                         PKG_NAME = get_package_name("DIST-INFO", "uiucprescon.images.dist-info/METADATA")
                         PKG_VERSION = get_package_version("DIST-INFO", "uiucprescon.images.dist-info/METADATA")
                     }
                     steps {
-                        bat "if not exist logs mkdir logs"
-                        bat(
+//                         bat "if not exist logs mkdir logs"
+                        sh(
                             label: "Building docs on ${env.NODE_NAME}",
-                            script: "python -m sphinx docs ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx.log"
+                            script: """mkdir -p logs
+                                       python -m sphinx docs build/docs/html -d build/docs/.doctrees -w logs/build_sphinx.log
+                                       """
                             )
+//                         bat "if not exist logs mkdir logs"
+//                         bat(
+//                             label: "Building docs on ${env.NODE_NAME}",
+//                             script: "python -m sphinx docs ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx.log"
+//                             )
                     }
                     post{
                         always {
