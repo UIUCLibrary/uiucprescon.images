@@ -120,12 +120,8 @@ pipeline {
         parameterizedCron '@daily % DEPLOY_DEVPI=true; TEST_RUN_TOX=true'
     }
     options {
-//         disableConcurrentBuilds()  //each branch has 1 job running at a time
         buildDiscarder logRotator(artifactDaysToKeepStr: '10', artifactNumToKeepStr: '10')
         preserveStashes(buildCount: 5)
-    }
-    environment {
-        WORKON_HOME ="${WORKSPACE}\\pipenv"
     }
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
@@ -234,12 +230,6 @@ pipeline {
                 }
             }
             stages{
-//                 stage("Setting up Tests"){
-//                     steps{
-//                         bat "if not exist reports mkdir reports"
-//                         bat "if not exist logs mkdir logs"
-//                     }
-//                 }
                 stage("Running Tests"){
                     parallel {
                         stage("Run PyTest Unit Tests"){
@@ -363,15 +353,6 @@ pipeline {
                                         returnStatus: true
                                     )
                                 }
-//                                 script{
-//                                     if(env.BRANCH_NAME == "master"){
-//                                         bat(
-//                                             script: 'pylint uiucprescon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports\\pylint_issues.txt',
-//                                             label: "Running pylint for sonarqube",
-//                                             returnStatus: true
-//                                         )
-//                                     }
-//                                 }
                             }
                             post{
                                 always{
