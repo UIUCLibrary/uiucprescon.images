@@ -7,9 +7,10 @@ RUN python -m pip install pip --upgrade ; `
     python -m pip install setuptools --upgrade ; `
     python -m pip install wheel
 
-ADD requirements.txt c:/temp/
+ADD requirements.txt ci/docker/shared/requirements-ci.txt c:/temp/
 RUN python -m pip wheel --wheel-dir=c:\temp\wheels `
-                        -r c:\temp\requirements.txt
+                        -r c:\temp\requirements.txt `
+                        -r c:\temp\requirements-ci.txt
 
 FROM ${PYTHON_DOCKER_IMAGE_BASE}
 
@@ -25,5 +26,7 @@ ENV PIP_FIND_LINKS=c:\wheels\
 RUN python -m pip install pip --upgrade ; `
     python -m pip install setuptools --upgrade
 
-ADD requirements.txt c:/temp/
-RUN python -m pip install -r c:\temp\requirements.txt
+ADD requirements.txt ci/docker/shared/requirements-ci.txt c:/temp/
+RUN python -m pip install `
+    -r c:\temp\requirements.txt `
+    -r c:\temp\requirements-ci.txt
