@@ -246,3 +246,5 @@ dkms.conf
 *.lai
 
 # Executables
+!/ci/docker/python/*
+!/ci/docker/python/windows/build/msvc/Dockerfile
