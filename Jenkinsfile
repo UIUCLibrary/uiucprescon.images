@@ -190,18 +190,12 @@ pipeline {
                         PKG_VERSION = get_package_version("DIST-INFO", "uiucprescon.images.dist-info/METADATA")
                     }
                     steps {
-//                         bat "if not exist logs mkdir logs"
                         sh(
                             label: "Building docs on ${env.NODE_NAME}",
                             script: """mkdir -p logs
                                        python -m sphinx docs build/docs/html -d build/docs/.doctrees -w logs/build_sphinx.log
                                        """
                             )
-//                         bat "if not exist logs mkdir logs"
-//                         bat(
-//                             label: "Building docs on ${env.NODE_NAME}",
-//                             script: "python -m sphinx docs ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx.log"
-//                             )
                     }
                     post{
                         always {
@@ -272,7 +266,11 @@ pipeline {
                         stage("Run Doctest Tests"){
                             steps {
                                 catchError(buildResult: 'SUCCESS', message: 'DocTest found issues', stageResult: 'UNSTABLE') {
-                                    sh "python -m sphinx -b doctest docs build/docs -d build/docs/doctrees -w logs/doctest.log"
+                                    sh(label:"Running Doctest",
+                                       script: '''mkdir -p logs
+                                                  python -m sphinx -b doctest docs build/docs -d build/docs/doctrees -w logs/doctest.log
+                                        '''
+                                    )
                                 }
                             }
                             post{
@@ -288,7 +286,9 @@ pipeline {
                             steps{
                                 catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
                                     sh(label:"Running MyPy",
-                                       script: "mypy -p uiucprescon --html-report reports/mypy/html | tee logs/mypy.log"
+                                       script: '''mkdir -p logs
+                                                  mypy -p uiucprescon --html-report reports/mypy/html | tee logs/mypy.log
+                                                  '''
                                        )
                                }
                             }
@@ -351,10 +351,13 @@ pipeline {
                             steps{
                                 catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
                                     sh(label: "Running pylint",
-                                       script: '''pylint uiucprescon  -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt
-                                                   pylint uiucprescon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint_issues.txt
-                                                   '''
+                                       script: '''pylint uiucprescon  -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt'''
 
+                                    )
+                                    sh(
+                                        script: 'pylint uiucprescon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint_issues.txt',
+                                        label: "Running pylint for sonarqube",
+                                        returnStatus: true
                                     )
                                 }
 //                                 script{
