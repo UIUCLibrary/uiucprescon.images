@@ -843,7 +843,7 @@ pipeline {
                                 steps{
                                     unstash "DIST-INFO"
                                     script{
-                                        def props = readProperties interpolate: true, file: "HathiValidate.dist-info/METADATA"
+                                        def props = readProperties interpolate: true, file: "uiucprescon.images.dist-info/METADATA"
 
                                         if(isUnix()){
                                             sh(
@@ -896,7 +896,7 @@ pipeline {
                     steps {
                         script {
                             unstash "DIST-INFO"
-                            def props = readProperties interpolate: true, file: 'HathiValidate.dist-info/METADATA'
+                            def props = readProperties interpolate: true, file: 'uiucprescon.images.dist-info/METADATA'
                             try{
                                 timeout(30) {
                                     input "Release ${props.Name} ${props.Version} (https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging/${props.Name}/${props.Version}) to DevPi Production? "
@@ -914,9 +914,9 @@ pipeline {
                     node('linux && docker') {
                         checkout scm
                         script{
-                            docker.build("hathivalidate:devpi.${env.BUILD_ID}",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("uiucprescon.images:devpi.${env.BUILD_ID}",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
                                 unstash "DIST-INFO"
-                                def props = readProperties interpolate: true, file: 'HathiValidate.dist-info/METADATA'
+                                def props = readProperties interpolate: true, file: 'uiucprescon.images.dist-info/METADATA'
                                 sh(
                                     label: "Connecting to DevPi Server",
                                     script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
@@ -930,9 +930,9 @@ pipeline {
                 cleanup{
                     node('linux && docker') {
                        script{
-                            docker.build("hathivalidate:devpi.${env.BUILD_ID}",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("uiucprescon.images:devpi.${env.BUILD_ID}",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
                                 unstash "DIST-INFO"
-                                def props = readProperties interpolate: true, file: 'HathiValidate.dist-info/METADATA'
+                                def props = readProperties interpolate: true, file: 'uiucprescon.images.dist-info/METADATA'
                                 sh(
                                     label: "Connecting to DevPi Server",
                                     script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
