@@ -120,7 +120,7 @@ pipeline {
         parameterizedCron '@daily % DEPLOY_DEVPI=true; TEST_RUN_TOX=true'
     }
     options {
-        disableConcurrentBuilds()  //each branch has 1 job running at a time
+//         disableConcurrentBuilds()  //each branch has 1 job running at a time
         buildDiscarder logRotator(artifactDaysToKeepStr: '10', artifactNumToKeepStr: '10')
         preserveStashes(buildCount: 5)
     }
@@ -541,6 +541,7 @@ pipeline {
             }
             options{
                 timestamps()
+                lock("uiucprescon.images-devpi")
             }
             agent none
             environment{
