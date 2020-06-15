@@ -786,15 +786,17 @@ pipeline {
                         timeout(5){
                             unstash "wheel"
                             unstash "sdist"
-                            unstash "DOCUMENTATION"
+                            unstash "DOCS_ARCHIVE"
                             sh(
                                 label: "Connecting to DevPi Server",
-                                script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
+                                script: '''devpi use https://devpi.library.illinois.edu --clientdir ./devpi
+                                           devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
+                                        '''
                             )
                             sh(
                                 label: "Uploading to DevPi Staging",
-                                script: """devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi
-                                           devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
+                                script: """devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ./devpi
+                                           devpi upload --from-dir dist --clientdir ./devpi"""
                             )
                         }
                     }
