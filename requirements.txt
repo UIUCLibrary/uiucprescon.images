@@ -5,6 +5,7 @@ pylint
 sphinx
 lxml
 tox
+flake8
 bandit<=1.6
 mypy
 pykdu_compress>=0.1.3b1
