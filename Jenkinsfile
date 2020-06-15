@@ -376,6 +376,7 @@ pipeline {
                             post {
                                 always {
                                     junit "reports/pytest/junit-${env.NODE_NAME}-pytest.xml"
+                                    stash includes: "reports/pytest/*.xml", name: 'PYTEST_REPORT'
                                 }
                                 cleanup{
                                     cleanWs(
@@ -469,6 +470,7 @@ pipeline {
                                 always {
                                       archiveArtifacts 'logs/flake8.log'
                                       recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
+                                      stash includes: "logs/flake8.log", name: 'FLAKE8_REPORT'
                                 }
                                 cleanup{
                                     cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
@@ -495,11 +497,7 @@ pipeline {
                                 always{
                                     archiveArtifacts allowEmptyArchive: true, artifacts: "reports/pylint.txt"
                                     recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
-                                    stash(
-                                        name: 'PYLINT_SONAR_REPORT',
-                                        includes: "reports/pylint_issues.txt",
-                                        allowEmpty: true
-                                        )
+                                    stash includes: "reports/pylint_issues.txt,reports/pylint.txt", name: 'PYLINT_REPORT'
                                 }
                             }
                         }
@@ -566,72 +564,132 @@ pipeline {
                 }
             }
         }
-        stage("Run SonarQube Analysis"){
-            when{
-                equals expected: "master", actual: env.BRANCH_NAME
-                beforeAgent true
+        stage("Sonarcloud Analysis"){
+            agent {
+              dockerfile {
+                filename 'ci/docker/sonarcloud/Dockerfile'
+                label 'linux && docker'
+              }
             }
-            agent{
-                label "windows"
-            }
-            environment{
-                scannerHome = tool name: 'sonar-scanner-3.3.0', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+            options{
+                lock("uiucprescon.images-sonarscanner")
             }
             steps{
-                unstash "DIST-INFO"
+                checkout scm
+                sh "git fetch --all"
                 unstash "COVERAGE_REPORT"
+                unstash "PYTEST_REPORT"
                 unstash "BANDIT_REPORT"
-                unstash "PYLINT_SONAR_REPORT"
+                unstash "PYLINT_REPORT"
+                unstash "FLAKE8_REPORT"
                 script{
-                    def props = readProperties interpolate: true, file: 'uiucprescon.images.dist-info/METADATA'
-                    withSonarQubeEnv('sonarqube.library.illinois.edu') {
-                        withEnv(["PROJECT_DESCRIPTION=${props.Summary}"]) {
-                            bat(
+                    withSonarQubeEnv(installationName:"sonarcloud", credentialsId: 'sonarcloud-uiucprescon.images') {
+                        unstash "DIST-INFO"
+                        def props = readProperties(interpolate: true, file: "uiucprescon.images.dist-info/METADATA")
+                        if (env.CHANGE_ID){
+                            sh(
                                 label: "Running Sonar Scanner",
-                                script: "${env.scannerHome}/bin/sonar-scanner \
--Dsonar.projectBaseDir=${WORKSPACE} \
--Dsonar.python.coverage.reportPaths=reports/coverage.xml \
--Dsonar.python.xunit.reportPath=reports/pytest/junit-${env.NODE_NAME}-pytest.xml \
--Dsonar.projectVersion=${props.Version} \
--Dsonar.python.bandit.reportPaths=${WORKSPACE}/reports/bandit-report.json \
--Dsonar.links.ci=${env.JOB_URL} \
--Dsonar.buildString=${env.BUILD_TAG} \
--Dsonar.analysis.packageName=${props.Name} \
--Dsonar.analysis.buildNumber=${env.BUILD_NUMBER} \
--Dsonar.analysis.scmRevision=${env.GIT_COMMIT} \
--Dsonar.working.directory=${WORKSPACE}\\.scannerwork \
--Dsonar.python.pylint.reportPath=${WORKSPACE}\\reports\\pylint.txt \
--Dsonar.projectDescription=\"%PROJECT_DESCRIPTION%\" \
-"
-                            )
+                                script:"sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
+                                )
+                        } else {
+                            sh(
+                                label: "Running Sonar Scanner",
+                                script: "sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.branch.name=${env.BRANCH_NAME}"
+                                )
                         }
                     }
-                }
-                script{
-                    def sonarqube_result = waitForQualityGate abortPipeline: false
-                    if(sonarqube_result.status != "OK"){
-                        unstable("SonarQube quality gate: ${sonarqube_result}")
+                    timeout(time: 1, unit: 'HOURS') {
+                        def sonarqube_result = waitForQualityGate(abortPipeline: false)
+                        if (sonarqube_result.status != 'OK') {
+                            unstable "SonarQube quality gate: ${sonarqube_result.status}"
+                        }
+                        def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
+                        writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
                     }
-                    def sonarqube_data = get_sonarqube_scan_data(".scannerwork/report-task.txt")
-                    echo sonarqube_data.toString()
-
-                    echo get_sonarqube_project_analysis(".scannerwork/report-task.txt", BUILD_TAG).toString()
-                    def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
-                    writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
                 }
             }
-            post{
+            post {
                 always{
-                    archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
-                    recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
-                }
-                cleanup{
-                    dir(".scannerwork"){
-                        deleteDir()
+                    archiveArtifacts(
+                        allowEmptyArchive: true,
+                        artifacts: ".scannerwork/report-task.txt"
+                    )
+                    script{
+                        if(fileExists('reports/sonar-report.json')){
+                            stash includes: "reports/sonar-report.json", name: 'SONAR_REPORT'
+                            archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
+                            recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+                        }
                     }
                 }
             }
         }
+//         stage("Run SonarQube Analysis"){
+//             when{
+//                 equals expected: "master", actual: env.BRANCH_NAME
+//                 beforeAgent true
+//             }
+//             agent{
+//                 label "windows"
+//             }
+//             environment{
+//                 scannerHome = tool name: 'sonar-scanner-3.3.0', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+//             }
+//             steps{
+//                 unstash "DIST-INFO"
+//                 unstash "COVERAGE_REPORT"
+//                 unstash "BANDIT_REPORT"
+//                 unstash "PYLINT_SONAR_REPORT"
+//                 script{
+//                     def props = readProperties interpolate: true, file: 'uiucprescon.images.dist-info/METADATA'
+//                     withSonarQubeEnv('sonarqube.library.illinois.edu') {
+//                         withEnv(["PROJECT_DESCRIPTION=${props.Summary}"]) {
+//                             bat(
+//                                 label: "Running Sonar Scanner",
+//                                 script: "${env.scannerHome}/bin/sonar-scanner \
+// -Dsonar.projectBaseDir=${WORKSPACE} \
+// -Dsonar.python.coverage.reportPaths=reports/coverage.xml \
+// -Dsonar.python.xunit.reportPath=reports/pytest/junit-${env.NODE_NAME}-pytest.xml \
+// -Dsonar.projectVersion=${props.Version} \
+// -Dsonar.python.bandit.reportPaths=${WORKSPACE}/reports/bandit-report.json \
+// -Dsonar.links.ci=${env.JOB_URL} \
+// -Dsonar.buildString=${env.BUILD_TAG} \
+// -Dsonar.analysis.packageName=${props.Name} \
+// -Dsonar.analysis.buildNumber=${env.BUILD_NUMBER} \
+// -Dsonar.analysis.scmRevision=${env.GIT_COMMIT} \
+// -Dsonar.working.directory=${WORKSPACE}\\.scannerwork \
+// -Dsonar.python.pylint.reportPath=${WORKSPACE}\\reports\\pylint.txt \
+// -Dsonar.projectDescription=\"%PROJECT_DESCRIPTION%\" \
+// "
+//                             )
+//                         }
+//                     }
+//                 }
+//                 script{
+//                     def sonarqube_result = waitForQualityGate abortPipeline: false
+//                     if(sonarqube_result.status != "OK"){
+//                         unstable("SonarQube quality gate: ${sonarqube_result}")
+//                     }
+//                     def sonarqube_data = get_sonarqube_scan_data(".scannerwork/report-task.txt")
+//                     echo sonarqube_data.toString()
+//
+//                     echo get_sonarqube_project_analysis(".scannerwork/report-task.txt", BUILD_TAG).toString()
+//                     def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
+//                     writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
+//                 }
+//             }
+//             post{
+//                 always{
+//                     archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
+//                     recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+//                 }
+//                 cleanup{
+//                     dir(".scannerwork"){
+//                         deleteDir()
+//                     }
+//                 }
+//             }
+//         }
         stage("Distribution Packaging") {
             stages{
                 stage("Building Wheel and sdist"){
