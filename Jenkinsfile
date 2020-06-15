@@ -370,12 +370,12 @@ pipeline {
                         stage("Run PyTest Unit Tests"){
                             steps{
                                 catchError(buildResult: 'UNSTABLE', message: 'PyTest found issues', stageResult: 'UNSTABLE') {
-                                    sh "coverage run --parallel-mode -m pytest --junitxml=reports/pytest/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest"
+                                    sh "coverage run --parallel-mode -m pytest --junitxml=reports/pytest/junit-pytest.xml"
                                 }
                             }
                             post {
                                 always {
-                                    junit "reports/pytest/junit-${env.NODE_NAME}-pytest.xml"
+                                    junit "reports/pytest/junit-pytest.xml"
                                     stash includes: "reports/pytest/*.xml", name: 'PYTEST_REPORT'
                                 }
                                 cleanup{
