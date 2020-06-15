@@ -507,7 +507,9 @@ pipeline {
                                 catchError(buildResult: 'SUCCESS', message: 'Bandit found issues', stageResult: 'UNSTABLE') {
                                     sh(
                                         label: "Running bandit",
-                                        script: "bandit --format json --output reports/bandit-report.json --recursive uiucprescon/images || bandit -f html --recursive uiucprescon/images --output ${WORKSPACE}/reports/bandit-report.html"
+                                        script: '''mkdir -p reports
+                                                   bandit --format json --output reports/bandit-report.json --recursive uiucprescon/images || bandit -f html --recursive uiucprescon/images --output reports/bandit-report.html
+                                                   '''
                                     )
                                 }
                             }
