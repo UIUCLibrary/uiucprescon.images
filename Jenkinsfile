@@ -262,6 +262,7 @@ pipeline {
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
+        booleanParam(name: "DEPLOY_ADD_TAG", defaultValue: false, description: "Tag commit to current version")
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
     }
 
@@ -941,156 +942,54 @@ pipeline {
                 }
             }
         }
-//         stage("Deploy to DevPi"){
-//             when {
-//                 allOf{
-//                     anyOf{
-//                         equals expected: true, actual: params.DEPLOY_DEVPI
-//                         triggeredBy "TimerTriggerCause"
-//                     }
-//                     anyOf {
-//                         equals expected: "master", actual: env.BRANCH_NAME
-//                         equals expected: "dev", actual: env.BRANCH_NAME
-//                     }
-//                 }
-//                 beforeAgent true
-//             }
-//             options{
-//                 timestamps()
-//                 lock("uiucprescon.images-devpi")
-//             }
-//             agent none
-//             environment{
-//                 DEVPI = credentials("DS_devpi")
-//             }
-//             stages{
-//                 stage("Deploy to Devpi Staging") {
-//                     agent {
-//                         dockerfile {
-//                             filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
-//                             label 'linux&&docker'
-//                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-//                           }
-//                     }
-//                     steps {
-//                         unstash 'DOCS_ARCHIVE'
-//                         unstash 'PYTHON_PACKAGES'
-//                         sh(
-//                             label: "Connecting to DevPi Server",
-//                             script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
-//                         )
-//                         sh(
-//                             label: "Uploading to DevPi Staging",
-//                             script: """devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi
-// devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
-//                         )
-//                     }
-//                 }
-//                 stage("Test DevPi packages") {
-//                     matrix {
-//                         axes {
-//                             axis {
-//                                 name 'FORMAT'
-//                                 values 'zip', "whl"
-//                             }
-//                             axis {
-//                                 name 'PYTHON_VERSION'
-//                                 values '3.6', "3.7"
-//                             }
-//                         }
-//                         agent {
-//                           dockerfile {
-//                             additionalBuildArgs "--build-arg PYTHON_DOCKER_IMAGE_BASE=${CONFIGURATIONS[PYTHON_VERSION].test_docker_image}"
-//                             filename 'CI/docker/deploy/devpi/test/windows/Dockerfile'
-//                             label 'windows && docker'
-//                           }
-//                         }
-//                         stages{
-//                             stage("Testing DevPi Package"){
-//                                 options{
-//                                     timeout(10)
-//                                 }
-//                                 steps{
-//                                     script{
-//                                         unstash "DIST-INFO"
-//                                         def props = readProperties interpolate: true, file: 'uiucprescon.images.dist-info/METADATA'
-//                                         bat(
-//                                             label: "Connecting to Devpi Server",
-//                                             script: "devpi use https://devpi.library.illinois.edu --clientdir certs\\ && devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\ && devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\"
-//                                         )
-//                                         bat(
-//                                             label: "Testing package stored on DevPi",
-//                                             script: "devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${FORMAT} --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v"
-//                                         )
-//                                     }
-//                                 }
-//                                 post{
-//                                     cleanup{
-//                                         cleanWs(
-//                                             deleteDirs: true,
-//                                             patterns: [
-//                                                 [pattern: "dist/", type: 'INCLUDE'],
-//                                                 [pattern: "certs/", type: 'INCLUDE'],
-//                                                 [pattern: "dcc_qc.dist-info/", type: 'INCLUDE'],
-//                                                 [pattern: 'build/', type: 'INCLUDE']
-//                                             ]
-//                                         )
-//                                     }
-//                                 }
-//                             }
-//                         }
-//                     }
-//                 }
-//             }
-//             post{
-//                 success{
-//                     node('linux && docker') {
-//                        script{
-//                             docker.build("uiucpresconimages:devpi.${env.BUILD_ID}",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
-//                                 unstash "DIST-INFO"
-//                                 def props = readProperties interpolate: true, file: 'uiucprescon.images.dist-info/METADATA'
-//                                 sh(
-//                                     label: "Connecting to DevPi Server",
-//                                     script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
-//                                 )
-//                                 sh(
-//                                     label: "Selecting to DevPi index",
-//                                     script: "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi"
-//                                 )
-//                                 sh(
-//                                     label: "Pushing package to DevPi index",
-//                                     script:  "devpi push ${props.Name}==${props.Version} DS_Jenkins/${env.BRANCH_NAME} --clientdir ${WORKSPACE}/devpi"
-//                                 )
-//                             }
-//                        }
-//                     }
-//                 }
-//                 cleanup{
-//                     node('linux && docker') {
-//                        script{
-//                             docker.build("uiucpresconimages:devpi.${env.BUILD_ID}",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
-//                                 unstash "DIST-INFO"
-//                                 def props = readProperties interpolate: true, file: 'uiucprescon.images.dist-info/METADATA'
-//                                 sh(
-//                                     label: "Connecting to DevPi Server",
-//                                     script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
-//                                 )
-//                                 sh(
-//                                     label: "Selecting to DevPi index",
-//                                     script: "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi"
-//                                 )
-//                                 sh(
-//                                     label: "Removing package to DevPi index",
-//                                     script: "devpi remove -y ${props.Name}==${props.Version} --clientdir ${WORKSPACE}/devpi"
-//                                 )
-//                             }
-//                        }
-//                     }
-//                 }
-//             }
-//         }
         stage("Deploy"){
             parallel {
+                stage("Tagging git Commit"){
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        }
+                    }
+                    when{
+                        allOf{
+                            equals expected: true, actual: params.DEPLOY_ADD_TAG
+                        }
+                        beforeAgent true
+                        beforeInput true
+                    }
+                    options{
+                        timeout(time: 1, unit: 'DAYS')
+                        retry(3)
+                    }
+                    input {
+                          message 'Add a version tag to git commit?'
+                          parameters {
+                                credentials credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl', defaultValue: 'github.com', description: '', name: 'gitCreds', required: true
+                          }
+                    }
+                    steps{
+                        unstash "DIST-INFO"
+                        script{
+                            def props = readProperties interpolate: true, file: "uiucprescon.images.dist-info/METADATA"
+                            def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
+                            withCredentials([usernamePassword(credentialsId: gitCreds, passwordVariable: 'password', usernameVariable: 'username')]) {
+                                sh(label: "Tagging ${commitTag}",
+                                   script: """git config --local credential.helper "!f() { echo username=\\$username; echo password=\\$password; }; f"
+                                              git tag -a ${commitTag} -m 'Tagged by Jenkins'
+                                              git push origin --tags
+                                           """
+                                )
+                            }
+                        }
+                    }
+                    post{
+                        cleanup{
+                            deleteDir()
+                        }
+                    }
+                }
                 stage("Deploy Online Documentation") {
                     agent any
                     when{
