@@ -139,7 +139,7 @@ pipeline {
         stage("Getting Distribution Info"){
             agent {
                 dockerfile {
-                    filename 'ci/docker/python37/windows/build/msvc/Dockerfile'
+                    filename 'ci/docker/python/windows/build/msvc/Dockerfile'
                     label 'Windows&&Docker'
                  }
             }
@@ -167,7 +167,7 @@ pipeline {
                 stage("Python Package"){
                     agent {
                         dockerfile {
-                            filename 'ci/docker/python37/windows/build/msvc/Dockerfile'
+                            filename 'ci/docker/python/windows/build/msvc/Dockerfile'
                             label 'Windows&&Docker'
                          }
                     }
@@ -179,7 +179,7 @@ pipeline {
                 stage("Sphinx Documentation"){
                     agent {
                         dockerfile {
-                            filename 'ci/docker/python37/windows/build/msvc/Dockerfile'
+                            filename 'ci/docker/python/windows/build/msvc/Dockerfile'
                             label 'Windows&&Docker'
                          }
                     }
@@ -225,7 +225,7 @@ pipeline {
         stage("Test") {
             agent {
                 dockerfile {
-                    filename 'ci/docker/python37/windows/build/msvc/Dockerfile'
+                    filename 'ci/docker/python/windows/build/msvc/Dockerfile'
                     label 'Windows&&Docker'
                  }
             }
@@ -486,7 +486,7 @@ pipeline {
         stage("Packaging") {
             agent {
                 dockerfile {
-                    filename 'ci/docker/python37/windows/build/msvc/Dockerfile'
+                    filename 'ci/docker/python/windows/build/msvc/Dockerfile'
                     label 'Windows&&Docker'
                  }
             }
