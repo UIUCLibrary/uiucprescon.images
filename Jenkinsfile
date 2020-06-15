@@ -344,7 +344,9 @@ pipeline {
                             steps{
                                 catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
                                     sh(label: "Running pylint",
-                                       script: '''pylint uiucprescon  -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt'''
+                                       script: '''mkdir -p reports
+                                                  pylint uiucprescon  -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt
+                                               '''
 
                                     )
                                     sh(
