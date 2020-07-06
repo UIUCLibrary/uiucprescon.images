@@ -22,11 +22,13 @@ COPY --from=wheel_builder c:\temp\wheels c:\wheels\
 
 ENV PIP_EXTRA_INDEX_URL="${PIP_INDEX_URL}"
 ENV PIP_TRUSTED_HOST="devpi.library.illinois.edu"
-ENV PIP_FIND_LINKS=c:\wheels\
+
 RUN python -m pip install pip --upgrade ; `
     python -m pip install setuptools --upgrade
 
 ADD requirements.txt ci/docker/shared/requirements-ci.txt c:/temp/
-RUN python -m pip install `
+RUN python -m pip install --no-index --find-links=c:\wheels\ `
     -r c:\temp\requirements.txt `
     -r c:\temp\requirements-ci.txt
+
+ENV PIP_FIND_LINKS=c:\wheels\
