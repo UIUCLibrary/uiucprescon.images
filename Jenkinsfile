@@ -764,6 +764,7 @@ pipeline {
                     }
                 }
                 beforeAgent true
+                beforeOptions true
             }
             agent none
             environment{
