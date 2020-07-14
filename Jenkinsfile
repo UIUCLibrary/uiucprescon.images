@@ -257,6 +257,7 @@ pipeline {
     }
     parameters {
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
+        booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Python packages")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
         booleanParam(name: "DEPLOY_ADD_TAG", defaultValue: false, description: "Tag commit to current version")
@@ -319,15 +320,15 @@ pipeline {
                     }
                     steps {
                         sh(
-                            label: "Building docs on ${env.NODE_NAME}",
-                            script: """mkdir -p logs
+                            label: "Building docs",
+                            script: '''mkdir -p logs
                                        python -m sphinx docs build/docs/html -d build/docs/.doctrees -w logs/build_sphinx.log
-                                       """
+                                       '''
                             )
                     }
                     post{
                         always {
-                            recordIssues(tools: [pep8(pattern: 'logs/build_sphinx.log')])
+                            recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
                             archiveArtifacts artifacts: 'logs/build_sphinx.log'
                         }
                         success{
@@ -622,6 +623,14 @@ pipeline {
             }
         }
         stage("Distribution Packaging") {
+            when{
+                anyOf{
+                    equals expected: true, actual: params.BUILD_PACKAGES
+                    equals expected: true, actual: params.DEPLOY_DEVPI
+                    equals expected: true, actual: params.BDEPLOY_DEVPI_PRODUCTION
+                }
+                beforeAgent true
+            }
             stages{
                 stage("Building Wheel and sdist"){
                     agent {
@@ -755,6 +764,7 @@ pipeline {
                     }
                 }
                 beforeAgent true
+                beforeOptions true
             }
             agent none
             environment{
@@ -983,6 +993,7 @@ pipeline {
                     agent any
                     when{
                         equals expected: true, actual: params.DEPLOY_DOCS
+                        beforeAgent true
                     }
                     steps{
                         unstash "DOCS_ARCHIVE"
