@@ -375,15 +375,7 @@ pipeline {
                                     junit "reports/pytest/junit-pytest.xml"
                                     stash includes: "reports/pytest/*.xml", name: 'PYTEST_REPORT'
                                 }
-                                cleanup{
-                                    cleanWs(
-                                        patterns: [
-                                            [pattern: 'reports/pytest/junit-*.xml', type: 'INCLUDE'],
-                                            [pattern: '.pytest_cache/', type: 'INCLUDE'],
-                                        ],
-                                        deleteDirs: true,
-                                    )
-                                }
+
                             }
                         }
                         stage("Run Doctest Tests"){
@@ -399,9 +391,6 @@ pipeline {
                             post{
                                 always {
                                     archiveArtifacts artifacts: "logs/doctest.log"
-                                }
-                                cleanup{
-                                    cleanWs(patterns: [[pattern: 'logs/doctest.log', type: 'INCLUDE']])
                                 }
                             }
                         }
@@ -421,15 +410,6 @@ pipeline {
                                     recordIssues(tools: [myPy(pattern: 'logs/mypy.log')])
                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                                 }
-                                cleanup{
-                                    cleanWs(
-                                        patterns: [
-                                            [pattern: 'logs/mypy.log', type: 'INCLUDE'],
-                                            [pattern: '.mypy_cache/', type: 'INCLUDE'],
-                                        ],
-                                        deleteDirs: true,
-                                    )
-                                }
                             }
                         }
                         stage("Run Tox test") {
@@ -443,13 +423,6 @@ pipeline {
                                 always {
                                     recordIssues(tools: [pep8(id: 'tox', name: 'Tox', pattern: '.tox/**/*.log')])
                                     archiveArtifacts artifacts: "tox/**/*.log", allowEmptyArchive: true
-                                }
-                                cleanup{
-                                    cleanWs(
-                                        patterns: [
-                                            [pattern: 'tox/**/*.log', type: 'INCLUDE']
-                                        ]
-                                    )
                                 }
                             }
                         }
@@ -468,9 +441,6 @@ pipeline {
                                       archiveArtifacts 'logs/flake8.log'
                                       recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
                                       stash includes: "logs/flake8.log", name: 'FLAKE8_REPORT'
-                                }
-                                cleanup{
-                                    cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
                                 }
                             }
                         }
@@ -545,6 +515,11 @@ pipeline {
                                     [pattern: 'logs/', type: 'INCLUDE'],
                                     [pattern: 'reports/', type: 'INCLUDE'],
                                     [pattern: "uiucprescon.images.egg-info/", type: 'INCLUDE'],
+                                    [pattern: 'reports/pytest/junit-*.xml', type: 'INCLUDE'],
+                                    [pattern: '.pytest_cache/', type: 'INCLUDE'],
+                                    [pattern: 'tox/**/*.log', type: 'INCLUDE'],
+                                    [pattern: '.mypy_cache/', type: 'INCLUDE'],
+
                                 ],
                                 deleteDirs: true,
                             )
