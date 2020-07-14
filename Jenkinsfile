@@ -992,6 +992,7 @@ pipeline {
                     agent any
                     when{
                         equals expected: true, actual: params.DEPLOY_DOCS
+                        beforeAgent true
                     }
                     steps{
                         unstash "DOCS_ARCHIVE"
