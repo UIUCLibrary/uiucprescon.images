@@ -322,7 +322,7 @@ pipeline {
                         sh(
                             label: "Building docs",
                             script: '''mkdir -p logs
-                                       python -m sphinx docs build/docs/html -d build/docs/.doctrees | tee logs/build_sphinx.log
+                                       python -m sphinx docs build/docs/html -d build/docs/.doctrees 2> logs/build_sphinx.log
                                        '''
                             )
                     }
