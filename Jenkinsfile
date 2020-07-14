@@ -627,7 +627,7 @@ pipeline {
                 anyOf{
                     equals expected: true, actual: params.BUILD_PACKAGES
                     equals expected: true, actual: params.DEPLOY_DEVPI
-                    equals expected: true, actual: params.BDEPLOY_DEVPI_PRODUCTION
+                    equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
                 }
                 beforeAgent true
             }
@@ -877,7 +877,7 @@ pipeline {
                 stage("Deploy to DevPi Production") {
                     when {
                         allOf{
-                            equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+                            equals expected: true, actual: params.EPLOY_DEVPI_PRODUCTION
                             branch "master"
                         }
                         beforeAgent true
