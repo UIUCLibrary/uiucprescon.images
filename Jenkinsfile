@@ -320,10 +320,10 @@ pipeline {
                     }
                     steps {
                         sh(
-                            label: "Building docs on ${env.NODE_NAME}",
-                            script: """mkdir -p logs
-                                       python -m sphinx docs build/docs/html -d build/docs/.doctrees -w logs/build_sphinx.log
-                                       """
+                            label: "Building docs",
+                            script: '''mkdir -p logs
+                                       python -m sphinx docs build/docs/html -d build/docs/.doctrees | tee logs/build_sphinx.log
+                                       '''
                             )
                     }
                     post{
