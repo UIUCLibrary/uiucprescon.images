@@ -15,9 +15,10 @@ RUN python -m pip install --upgrade pip &&  \
     pip install setuptools --upgrade && \
     pip install conan
 
-RUN pip wheel --wheel-dir=/wheels -i ${PYTHON_INDEX} \
+RUN pip wheel --no-cache-dir --wheel-dir=/wheels -i ${PYTHON_INDEX} \
     -r /tmp/requirements.txt \
-    -r /tmp/requirements-ci.txt
+    -r /tmp/requirements-ci.txt && \
+    rm -rf  /root/.cache
 
 FROM python:${PYTHON_VERSION}
 ARG USER_ID=1000
