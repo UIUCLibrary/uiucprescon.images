@@ -24,7 +24,7 @@ def CONFIGURATIONS = [
                     devpi: [
                         dockerfile: [
                             filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
-                            label: 'Windows && Docker',
+                            label: 'windows && docker',
                             additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
                         ]
                     ]
@@ -88,14 +88,14 @@ def CONFIGURATIONS = [
                     test: [
                         dockerfile: [
                             filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
-                            label: 'Windows && Docker',
+                            label: 'windows && docker',
                             additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
                         ]
                     ],
                     devpi: [
                         dockerfile: [
                             filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
-                            label: 'Windows && Docker',
+                            label: 'windows && docker',
                             additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
                         ]
                     ]
