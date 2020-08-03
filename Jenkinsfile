@@ -713,12 +713,12 @@ pipeline {
                                         findFiles( glob: 'dist/**/*.whl').each{
                                             if(isUnix()){
                                                 sh(
-                                                    label: "Testing ${it} ${python_env}",
+                                                    label: "Testing ${it}",
                                                     script: "tox --installpkg=${it.path} -v"
                                                 )
                                             } else {
                                                 bat(
-                                                    label: "Testing ${it} ${python_env}",
+                                                    label: "Testing ${it}",
                                                     script: "tox --installpkg=${it.path} -v"
                                                 )
                                             }
@@ -770,12 +770,12 @@ pipeline {
                                         findFiles( glob: 'dist/*.tar.gz,dist/*.zip').each{
                                             if(isUnix()){
                                                 sh(
-                                                    label: "Testing ${it} ${python_env}",
+                                                    label: "Testing ${it}",
                                                     script: "tox --installpkg=${it.path} -v"
                                                     )
                                             } else {
                                                 bat(
-                                                    label: "Testing ${it} ${python_env}",
+                                                    label: "Testing ${it}",
                                                     script: "tox --installpkg=${it.path} -v"
                                                 )
                                             }
