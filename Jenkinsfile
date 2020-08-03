@@ -710,12 +710,12 @@ pipeline {
                                             if(isUnix()){
                                                 sh(
                                                     label: "Testing ${it}",
-                                                    script: "tox --installpkg=${it.path} -e py -vv"
+                                                    script: "tox --installpkg=${it.path} -e py${PYTHON_VERSION.replaceAll('.', '')} -vv"
                                                     )
                                             } else {
                                                 bat(
                                                     label: "Testing ${it}",
-                                                    script: "tox --installpkg=${it.path} -e py -vv"
+                                                    script: "tox --installpkg=${it.path} -e py${PYTHON_VERSION.replaceAll('.', '')} -vv"
                                                 )
                                             }
                                         }
@@ -723,7 +723,7 @@ pipeline {
                                 }
                                 post{
                                     unstable {
-                                        archiveArtifacts artifacts: ".tox/**/log/*.log"
+                                        archiveArtifacts artifacts: ".tox/**/*.log"
                                     }
                                     cleanup{
                                         cleanWs(
@@ -779,7 +779,7 @@ pipeline {
                                 }
                                 post{
                                     unstable {
-                                        archiveArtifacts artifacts: ".tox/**/logs/*.log", fingerprint: true
+                                        archiveArtifacts artifacts: ".tox/**/log/*.log"
                                     }
                                     cleanup{
                                         cleanWs(
