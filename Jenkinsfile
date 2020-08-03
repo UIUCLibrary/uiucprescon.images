@@ -257,6 +257,7 @@ pipeline {
     }
     parameters {
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
+        booleanParam(name: "USE_SONARQUBE", defaultValue: true, description: "Send data test data to SonarQube")
         booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Python packages")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
@@ -547,9 +548,12 @@ pipeline {
             options{
                 lock("uiucprescon.images-sonarscanner")
             }
+            when{
+                equals expected: true, actual: params.USE_SONARQUBE
+                beforeAgent true
+                beforeOptions true
+            }
             steps{
-                checkout scm
-                sh "git fetch --all"
                 unstash "COVERAGE_REPORT"
                 unstash "PYTEST_REPORT"
                 unstash "BANDIT_REPORT"
@@ -658,28 +662,12 @@ pipeline {
                                     "linux"
                                 )
                             }
-                            axis {
-                                name 'FORMAT'
-                                values(
-                                    "wheel",
-                                    "sdist"
-                                )
-                            }
                         }
-                        excludes{
-                            exclude {
-                                axis {
-                                    name 'PLATFORM'
-                                    values 'linux'
-                                }
-                                axis {
-                                    name 'FORMAT'
-                                    values 'wheel'
-                                }
-                            }
+                        environment{
+                            TOXENV="py${PYTHON_VERSION}".replaceAll('\\.', '')
                         }
                         stages{
-                            stage("Testing Packages"){
+                            stage("Testing wheel Packages"){
                                 agent {
                                     dockerfile {
                                         filename "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.test.dockerfile.filename}"
@@ -687,36 +675,105 @@ pipeline {
                                         additionalBuildArgs "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.test.dockerfile.additionalBuildArgs}"
                                      }
                                 }
+                                options {
+                                    warnError('Testing Package failed')
+                                }
                                 steps{
+                                    cleanWs(
+                                        notFailBuild: true,
+                                        deleteDirs: true,
+                                        disableDeferredWipeout: true,
+                                        patterns: [
+                                                [pattern: '.git/**', type: 'EXCLUDE'],
+                                                [pattern: 'tests/**', type: 'EXCLUDE'],
+                                                [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                            ]
+                                    )
+                                    unstash "wheel"
                                     script{
-                                        if (FORMAT == "wheel"){
-                                            unstash "wheel"
-                                        }
-                                        else{
-                                            unstash "sdist"
-                                        }
-                                        findFiles( glob: "dist/**/${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].pkgRegex[FORMAT]}").each{
+                                        findFiles( glob: 'dist/**/*.whl').each{
                                             if(isUnix()){
                                                 sh(
                                                     label: "Testing ${it}",
-                                                    script: "tox --installpkg=${it.path} -e py -v"
-                                                    )
+                                                    script: "tox --installpkg=${it.path} -v"
+                                                )
                                             } else {
                                                 bat(
                                                     label: "Testing ${it}",
-                                                    script: "tox --installpkg=${it.path} -e py -v"
+                                                    script: "tox --installpkg=${it.path} -v"
                                                 )
                                             }
                                         }
                                     }
                                 }
                                 post{
+                                    unsuccessful {
+                                        archiveArtifacts artifacts: ".tox/**/*.log"
+                                    }
                                     cleanup{
                                         cleanWs(
                                             notFailBuild: true,
                                             deleteDirs: true,
                                             patterns: [
                                                     [pattern: 'dist', type: 'INCLUDE'],
+                                                    [pattern: '**/__pycache__', type: 'INCLUDE'],
+                                                    [pattern: 'build', type: 'INCLUDE'],
+                                                    [pattern: '.tox', type: 'INCLUDE'],
+                                                ]
+                                        )
+                                    }
+                                }
+                            }
+                            stage("Testing sdist Packages"){
+                                agent {
+                                    dockerfile {
+                                        filename "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.test.dockerfile.filename}"
+                                        label "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.test.dockerfile.label}"
+                                        additionalBuildArgs "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.test.dockerfile.additionalBuildArgs}"
+                                     }
+                                }
+                                options {
+                                    warnError('Testing Package failed')
+                                }
+                                steps{
+                                    cleanWs(
+                                        notFailBuild: true,
+                                        deleteDirs: true,
+                                        disableDeferredWipeout: true,
+                                        patterns: [
+                                                [pattern: '.git/**', type: 'EXCLUDE'],
+                                                [pattern: 'tests/**', type: 'EXCLUDE'],
+                                                [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                            ]
+                                    )
+                                    unstash "sdist"
+                                    script{
+                                        findFiles( glob: 'dist/*.tar.gz,dist/*.zip').each{
+                                            if(isUnix()){
+                                                sh(
+                                                    label: "Testing ${it}",
+                                                    script: "tox --installpkg=${it.path} -v"
+                                                    )
+                                            } else {
+                                                bat(
+                                                    label: "Testing ${it}",
+                                                    script: "tox --installpkg=${it.path} -v"
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                post{
+                                    unsuccessful {
+                                        archiveArtifacts artifacts: ".tox/**/log/*.log"
+                                    }
+                                    cleanup{
+                                        cleanWs(
+                                            notFailBuild: true,
+                                            deleteDirs: true,
+                                            patterns: [
+                                                    [pattern: 'dist', type: 'INCLUDE'],
+                                                    [pattern: '**/__pycache__', type: 'INCLUDE'],
                                                     [pattern: 'build', type: 'INCLUDE'],
                                                     [pattern: '.tox', type: 'INCLUDE'],
                                                 ]

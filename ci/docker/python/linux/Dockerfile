@@ -7,7 +7,6 @@ RUN wget -O /tmp/install_cmake.sh $CMAKE_DOWNLOAD_URL && \
     cmake --version
 
 RUN apt update && apt install -y ninja-build
-ADD requirements.txt ci/docker/shared/requirements-ci.txt /tmp/
 ARG PYTHON_INDEX=https://devpi.library.illinois.edu/production/release
 
 RUN python -m pip install --upgrade pip &&  \
@@ -15,10 +14,13 @@ RUN python -m pip install --upgrade pip &&  \
     pip install setuptools --upgrade && \
     pip install conan
 
+ADD requirements.txt ci/docker/shared/requirements-ci.txt ci/docker/shared/requirements-extra.txt /tmp/
 RUN pip wheel --no-cache-dir --wheel-dir=/wheels -i ${PYTHON_INDEX} \
-    -r /tmp/requirements.txt \
-    -r /tmp/requirements-ci.txt && \
-    rm -rf  /root/.cache
+        -r /tmp/requirements.txt \
+        -r /tmp/requirements-ci.txt && \
+    rm -rf  /root/.cache && \
+    pip wheel --no-cache-dir --wheel-dir=/wheels -i ${PYTHON_INDEX} \
+        -r /tmp/requirements-extra.txt
 
 FROM python:${PYTHON_VERSION}
 ARG USER_ID=1000
