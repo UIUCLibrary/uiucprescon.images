@@ -706,16 +706,17 @@ pipeline {
                                     )
                                     unstash "wheel"
                                     script{
+                                        def python_env = "py${PYTHON_VERSION.replaceAll('.', '')}"
                                         findFiles( glob: 'dist/**/*.whl').each{
                                             if(isUnix()){
                                                 sh(
-                                                    label: "Testing ${it}",
-                                                    script: "tox --installpkg=${it.path} -e py${PYTHON_VERSION.replaceAll('.', '')} -vv"
-                                                    )
+                                                    label: "Testing ${it} ${python_env}",
+                                                    script: "tox --installpkg=${it.path} -e ${python_env} -vv"
+                                                )
                                             } else {
                                                 bat(
-                                                    label: "Testing ${it}",
-                                                    script: "tox --installpkg=${it.path} -e py${PYTHON_VERSION.replaceAll('.', '')} -vv"
+                                                    label: "Testing ${it} ${python_env}",
+                                                    script: "tox --installpkg=${it.path} -e ${python_env} -vv"
                                                 )
                                             }
                                         }
@@ -763,15 +764,16 @@ pipeline {
                                     unstash "sdist"
                                     script{
                                         findFiles( glob: 'dist/*.tar.gz,dist/*.zip').each{
+                                            def python_env = "py${PYTHON_VERSION.replaceAll('.', '')}"
                                             if(isUnix()){
                                                 sh(
-                                                    label: "Testing ${it}",
-                                                    script: "tox --installpkg=${it.path} -e py${PYTHON_VERSION.replaceAll('.', '')} -vv"
+                                                    label: "Testing ${it} ${python_env}",
+                                                    script: "tox --installpkg=${it.path} -e ${python_env} -vv"
                                                     )
                                             } else {
                                                 bat(
-                                                    label: "Testing ${it}",
-                                                    script: "tox --installpkg=${it.path} -e py${PYTHON_VERSION.replaceAll('.', '')} -vv"
+                                                    label: "Testing ${it} ${python_env}",
+                                                    script: "tox --installpkg=${it.path} -e ${python_env} -vv"
                                                 )
                                             }
                                         }
