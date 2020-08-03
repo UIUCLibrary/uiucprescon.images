@@ -686,7 +686,6 @@ pipeline {
                                      }
                                 }
                                 steps{
-                                    unstash "wheel"
                                     cleanWs(
                                         notFailBuild: true,
                                         deleteDirs: true,
@@ -696,6 +695,7 @@ pipeline {
                                                 [pattern: 'tox.ini', type: 'EXCLUDE'],
                                             ]
                                     )
+                                    unstash "wheel"
                                     script{
                                         findFiles( glob: 'dist/**/*.whl').each{
                                             if(isUnix()){
