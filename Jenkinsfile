@@ -722,7 +722,7 @@ pipeline {
                                     }
                                 }
                                 post{
-                                    unstable {
+                                    unsuccessful {
                                         archiveArtifacts artifacts: ".tox/**/*.log"
                                     }
                                     cleanup{
@@ -778,7 +778,7 @@ pipeline {
                                     }
                                 }
                                 post{
-                                    unstable {
+                                    unsuccessful {
                                         archiveArtifacts artifacts: ".tox/**/log/*.log"
                                     }
                                     cleanup{
