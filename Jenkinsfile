@@ -717,7 +717,7 @@ pipeline {
                                 }
                                 post{
                                     unstable {
-                                        archiveArtifacts artifacts: ".tox/**/logs/*.log", fingerprint: true
+                                        archiveArtifacts artifacts: ".tox/**/log/*.log"
                                     }
                                     cleanup{
                                         cleanWs(
