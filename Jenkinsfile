@@ -711,12 +711,12 @@ pipeline {
                                             if(isUnix()){
                                                 sh(
                                                     label: "Testing ${it} ${python_env}",
-                                                    script: "tox --installpkg=${it.path} -e ${python_env} -vv"
+                                                    script: "tox --installpkg=${it.path} -e ${python_env} -v"
                                                 )
                                             } else {
                                                 bat(
                                                     label: "Testing ${it} ${python_env}",
-                                                    script: "tox --installpkg=${it.path} -e ${python_env} -vv"
+                                                    script: "tox --installpkg=${it.path} -e ${python_env} -v"
                                                 )
                                             }
                                         }
@@ -768,12 +768,12 @@ pipeline {
                                             if(isUnix()){
                                                 sh(
                                                     label: "Testing ${it} ${python_env}",
-                                                    script: "tox --installpkg=${it.path} -e ${python_env} -vv"
+                                                    script: "tox --installpkg=${it.path} -e ${python_env} -v"
                                                     )
                                             } else {
                                                 bat(
                                                     label: "Testing ${it} ${python_env}",
-                                                    script: "tox --installpkg=${it.path} -e ${python_env} -vv"
+                                                    script: "tox --installpkg=${it.path} -e ${python_env} -v"
                                                 )
                                             }
                                         }
