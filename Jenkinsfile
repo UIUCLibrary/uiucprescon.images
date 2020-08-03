@@ -704,18 +704,21 @@ pipeline {
                                             if(isUnix()){
                                                 sh(
                                                     label: "Testing ${it}",
-                                                    script: "tox --installpkg=${it.path} -e py -v"
+                                                    script: "tox --installpkg=${it.path} -e py -vv"
                                                     )
                                             } else {
                                                 bat(
                                                     label: "Testing ${it}",
-                                                    script: "tox --installpkg=${it.path} -e py -v"
+                                                    script: "tox --installpkg=${it.path} -e py -vv"
                                                 )
                                             }
                                         }
                                     }
                                 }
                                 post{
+                                    unstable {
+                                        archiveArtifacts artifacts: ".tox/**/logs/*.log", fingerprint: true
+                                    }
                                     cleanup{
                                         cleanWs(
                                             notFailBuild: true,
@@ -769,6 +772,9 @@ pipeline {
                                     }
                                 }
                                 post{
+                                    unstable {
+                                        archiveArtifacts artifacts: ".tox/**/logs/*.log", fingerprint: true
+                                    }
                                     cleanup{
                                         cleanWs(
                                             notFailBuild: true,
