@@ -548,8 +548,6 @@ pipeline {
                 lock("uiucprescon.images-sonarscanner")
             }
             steps{
-                checkout scm
-                sh "git fetch --all"
                 unstash "COVERAGE_REPORT"
                 unstash "PYTEST_REPORT"
                 unstash "BANDIT_REPORT"
