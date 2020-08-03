@@ -727,6 +727,56 @@ pipeline {
                                     }
                                 }
                             }
+                            stage("Testing sdist Packages"){
+                                agent {
+                                    dockerfile {
+                                        filename "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.test.dockerfile.filename}"
+                                        label "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.test.dockerfile.label}"
+                                        additionalBuildArgs "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.test.dockerfile.additionalBuildArgs}"
+                                     }
+                                }
+                                steps{
+                                    cleanWs(
+                                        notFailBuild: true,
+                                        deleteDirs: true,
+                                        disableDeferredWipeout: true,
+                                        patterns: [
+                                                [pattern: 'tests', type: 'EXCLUDE'],
+                                                [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                            ]
+                                    )
+                                    unstash "sdist"
+                                    script{
+                                        findFiles( glob: 'dist/*.tar.gz,dist/*.zip').each{
+                                            if(isUnix()){
+                                                sh(
+                                                    label: "Testing ${it}",
+                                                    script: "tox --installpkg=${it.path} -e py -v"
+                                                    )
+                                            } else {
+                                                bat(
+                                                    label: "Testing ${it}",
+                                                    script: "tox --installpkg=${it.path} -e py -v"
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                post{
+                                    cleanup{
+                                        cleanWs(
+                                            notFailBuild: true,
+                                            deleteDirs: true,
+                                            patterns: [
+                                                    [pattern: 'dist', type: 'INCLUDE'],
+                                                    [pattern: '**/__pycache__', type: 'INCLUDE'],
+                                                    [pattern: 'build', type: 'INCLUDE'],
+                                                    [pattern: '.tox', type: 'INCLUDE'],
+                                                ]
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
