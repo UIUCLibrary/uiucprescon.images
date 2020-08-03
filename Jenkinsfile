@@ -766,12 +766,12 @@ pipeline {
                                             if(isUnix()){
                                                 sh(
                                                     label: "Testing ${it}",
-                                                    script: "tox --installpkg=${it.path} -e py -v"
+                                                    script: "tox --installpkg=${it.path} -e py${PYTHON_VERSION.replaceAll('.', '')} -vv"
                                                     )
                                             } else {
                                                 bat(
                                                     label: "Testing ${it}",
-                                                    script: "tox --installpkg=${it.path} -e py -v"
+                                                    script: "tox --installpkg=${it.path} -e py${PYTHON_VERSION.replaceAll('.', '')} -vv"
                                                 )
                                             }
                                         }
