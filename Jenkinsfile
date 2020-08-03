@@ -687,6 +687,15 @@ pipeline {
                                 }
                                 steps{
                                     unstash "wheel"
+                                    cleanWs(
+                                        notFailBuild: true,
+                                        deleteDirs: true,
+                                        disableDeferredWipeout: true,
+                                        patterns: [
+                                                [pattern: 'tests', type: 'EXCLUDE'],
+                                                [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                            ]
+                                    )
                                     script{
                                         findFiles( glob: 'dist/**/*.whl').each{
                                             if(isUnix()){
@@ -710,6 +719,7 @@ pipeline {
                                             deleteDirs: true,
                                             patterns: [
                                                     [pattern: 'dist', type: 'INCLUDE'],
+                                                    [pattern: '**/__pycache__', type: 'INCLUDE'],
                                                     [pattern: 'build', type: 'INCLUDE'],
                                                     [pattern: '.tox', type: 'INCLUDE'],
                                                 ]
