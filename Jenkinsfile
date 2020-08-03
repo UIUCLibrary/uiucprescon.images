@@ -706,7 +706,7 @@ pipeline {
                                     )
                                     unstash "wheel"
                                     script{
-                                        def python_env = "py${PYTHON_VERSION}".replaceAll('.', '')
+                                        def python_env = "py${PYTHON_VERSION}".replaceAll('\\.', '')
                                         findFiles( glob: 'dist/**/*.whl').each{
                                             if(isUnix()){
                                                 sh(
@@ -764,7 +764,7 @@ pipeline {
                                     unstash "sdist"
                                     script{
                                         findFiles( glob: 'dist/*.tar.gz,dist/*.zip').each{
-                                            def python_env = "py${PYTHON_VERSION}".replaceAll('.', '')
+                                            def python_env = "py${PYTHON_VERSION}".replaceAll('\\.', '')
                                             if(isUnix()){
                                                 sh(
                                                     label: "Testing ${it} ${python_env}",
