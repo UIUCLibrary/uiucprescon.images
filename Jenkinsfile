@@ -658,28 +658,28 @@ pipeline {
                                     "linux"
                                 )
                             }
-                            axis {
-                                name 'FORMAT'
-                                values(
-                                    "wheel",
-                                    "sdist"
-                                )
-                            }
+//                             axis {
+//                                 name 'FORMAT'
+//                                 values(
+//                                     "wheel",
+//                                     "sdist"
+//                                 )
+//                             }
                         }
-                        excludes{
-                            exclude {
-                                axis {
-                                    name 'PLATFORM'
-                                    values 'linux'
-                                }
-                                axis {
-                                    name 'FORMAT'
-                                    values 'wheel'
-                                }
-                            }
-                        }
+//                         excludes{
+//                             exclude {
+//                                 axis {
+//                                     name 'PLATFORM'
+//                                     values 'linux'
+//                                 }
+//                                 axis {
+//                                     name 'FORMAT'
+//                                     values 'wheel'
+//                                 }
+//                             }
+//                         }
                         stages{
-                            stage("Testing Packages"){
+                            stage("Testing wheel Packages"){
                                 agent {
                                     dockerfile {
                                         filename "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.test.dockerfile.filename}"
@@ -688,14 +688,9 @@ pipeline {
                                      }
                                 }
                                 steps{
+                                    unstash "wheel"
                                     script{
-                                        if (FORMAT == "wheel"){
-                                            unstash "wheel"
-                                        }
-                                        else{
-                                            unstash "sdist"
-                                        }
-                                        findFiles( glob: "dist/**/${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].pkgRegex[FORMAT]}").each{
+                                        findFiles( glob: 'dist/**/*.whl').each{
                                             if(isUnix()){
                                                 sh(
                                                     label: "Testing ${it}",
