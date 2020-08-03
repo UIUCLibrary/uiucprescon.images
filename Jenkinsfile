@@ -700,7 +700,7 @@ pipeline {
                                         deleteDirs: true,
                                         disableDeferredWipeout: true,
                                         patterns: [
-                                                [pattern: 'tests', type: 'EXCLUDE'],
+                                                [pattern: 'tests/**', type: 'EXCLUDE'],
                                                 [pattern: 'tox.ini', type: 'EXCLUDE'],
                                             ]
                                     )
@@ -756,7 +756,7 @@ pipeline {
                                         deleteDirs: true,
                                         disableDeferredWipeout: true,
                                         patterns: [
-                                                [pattern: 'tests', type: 'EXCLUDE'],
+                                                [pattern: 'tests/**', type: 'EXCLUDE'],
                                                 [pattern: 'tox.ini', type: 'EXCLUDE'],
                                             ]
                                     )
