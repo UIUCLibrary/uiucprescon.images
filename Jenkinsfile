@@ -685,6 +685,9 @@ pipeline {
                                         additionalBuildArgs "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.test.dockerfile.additionalBuildArgs}"
                                      }
                                 }
+                                options {
+                                    warnError('Testing Package failed')
+                                }
                                 steps{
                                     cleanWs(
                                         notFailBuild: true,
@@ -734,6 +737,9 @@ pipeline {
                                         label "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.test.dockerfile.label}"
                                         additionalBuildArgs "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.test.dockerfile.additionalBuildArgs}"
                                      }
+                                }
+                                options {
+                                    warnError('Testing Package failed')
                                 }
                                 steps{
                                     cleanWs(
