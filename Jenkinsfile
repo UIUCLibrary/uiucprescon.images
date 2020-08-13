@@ -546,10 +546,12 @@ pipeline {
                 }
                 stage("Sonarcloud Analysis"){
                     agent {
-                      dockerfile {
-                        filename 'ci/docker/sonarcloud/Dockerfile'
-                        label 'linux && docker'
-                      }
+                        dockerfile {
+                            filename 'ci/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                            args '--mount source=sonar-cache-uiucprescon-images,target=/home/user/.sonar/cache'
+                        }
                     }
                     options{
                         lock("uiucprescon.images-sonarscanner")
@@ -604,6 +606,17 @@ pipeline {
                                     recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                 }
                             }
+                        }
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: '.scannerwork/', type: 'INCLUDE'],
+                                    [pattern: 'logs/', type: 'INCLUDE'],
+                                    [pattern: "reports/", type: 'INCLUDE'],
+                                    [pattern: "	uiucprescon.images.dist-info/", type: 'INCLUDE'],
+                                ]
+                            )
                         }
                     }
                 }
