@@ -1,1 +1,4 @@
 pytest
+more-itertools
+attrs
+atomicwrites

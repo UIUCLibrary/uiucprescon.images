@@ -1,8 +1,9 @@
-devpi-client
-coverage
-pylint
-lxml
-tox
-flake8
 bandit<=1.6
+coverage
+flake8
+devpi-client
+lxml
 mypy
+pep517
+pylint
+tox
