@@ -23,11 +23,14 @@ RUN python -m pip install --upgrade pip &&  \
     pip wheel --wheel-dir=/wheels -r /tmp/requirements-extra.txt
 
 FROM python:${PYTHON_VERSION}
+RUN apt update && apt install -y libenchant1c2a
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 
 RUN groupadd -g $GROUP_ID user && \
-    useradd -u $USER_ID -s /bin/sh -m -d /home/user -g user user
+    useradd -u $USER_ID -s /bin/sh -m -d /home/user -g user user && \
+    mkdir -p /.cache/pip && chgrp -R  user /.cache/ && \
+    chmod -R g+w /.cache/
 
 USER user
 ENV SONAR_SCANNER_VERSION=4.4.0.2170
