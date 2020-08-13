@@ -256,6 +256,7 @@ pipeline {
         preserveStashes(buildCount: 5)
     }
     parameters {
+        booleanParam(name: "RUN_CHECKS", defaultValue: true, description: "Run checks on code")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: "USE_SONARQUBE", defaultValue: true, description: "Send data test data to SonarQube")
         booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Python packages")
@@ -356,6 +357,9 @@ pipeline {
             }
         }
         stage("Checks"){
+            when{
+                equals expected: true, actual: params.RUN_CHECKS
+            }
             stages{
                 stage("Test") {
                     agent{
