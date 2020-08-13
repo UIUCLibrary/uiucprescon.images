@@ -624,7 +624,10 @@ pipeline {
                         }
                     }
                     steps{
-                        sh script: "python setup.py build -b build sdist -d dist --format zip bdist_wheel -d dist"
+                        sh(
+                            label: "Build Python packages",
+                            script: "python -m pep517.build ."
+                        )
                     }
                     post {
                         success {
