@@ -11,7 +11,7 @@ RUN python -m pip install pip --upgrade ; `
                         -r c:\temp\requirements.txt `
                         -r c:\temp\requirements-ci.txt ; `
     pip wheel --wheel-dir=c:\temp\wheels `
-                        -r c:\temp\requirements-extra.txt ; `
+                        -r c:\temp\requirements-extra.txt
 
 FROM ${PYTHON_DOCKER_IMAGE_BASE}
 
