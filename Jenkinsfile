@@ -11,21 +11,21 @@ def CONFIGURATIONS = [
                         dockerfile: [
                             filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
                             label: 'Windows&&Docker',
-                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
                         ]
                     ],
                     test: [
                         dockerfile: [
                             filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
                             label: 'Windows&&Docker',
-                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
                         ]
                     ],
                     devpi: [
                         dockerfile: [
                             filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
                             label: 'windows && docker',
-                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
                         ]
                     ]
                 ],
@@ -82,21 +82,21 @@ def CONFIGURATIONS = [
                         dockerfile: [
                             filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
                             label: 'Windows&&Docker',
-                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
                         ]
                     ],
                     test: [
                         dockerfile: [
                             filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
                             label: 'windows && docker',
-                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
                         ]
                     ],
                     devpi: [
                         dockerfile: [
                             filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
                             label: 'windows && docker',
-                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
                         ]
                     ]
 
