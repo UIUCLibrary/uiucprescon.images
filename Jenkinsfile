@@ -546,10 +546,11 @@ pipeline {
                 }
                 stage("Sonarcloud Analysis"){
                     agent {
-                      dockerfile {
-                        filename 'ci/docker/sonarcloud/Dockerfile'
-                        label 'linux && docker'
-                      }
+                        dockerfile {
+                            filename 'ci/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
+                            args '--mount source=sonar-cache-uiucprescon-images,target=/home/user/.sonar/cache'
+                        }
                     }
                     options{
                         lock("uiucprescon.images-sonarscanner")
