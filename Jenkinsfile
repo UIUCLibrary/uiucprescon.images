@@ -702,12 +702,12 @@ pipeline {
                                             if(isUnix()){
                                                 sh(
                                                     label: "Testing ${it}",
-                                                    script: "tox --installpkg=${it.path} -v"
+                                                    script: "tox --installpkg=${it.path} -vv"
                                                 )
                                             } else {
                                                 bat(
                                                     label: "Testing ${it}",
-                                                    script: "tox --installpkg=${it.path} -v"
+                                                    script: "tox --installpkg=${it.path} -vv"
                                                 )
                                             }
                                         }
