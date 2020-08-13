@@ -606,6 +606,17 @@ pipeline {
                                     recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                 }
                             }
+                            cleanup{
+                                cleanWs(
+                                    deleteDirs: true,
+                                    patterns: [
+                                        [pattern: '.scannerwork/', type: 'INCLUDE'],
+                                        [pattern: 'logs/', type: 'INCLUDE'],
+                                        [pattern: "reports/", type: 'INCLUDE'],
+                                        [pattern: "	uiucprescon.images.dist-info/", type: 'INCLUDE'],
+                                    ]
+                                )
+                            }
                         }
                     }
                 }
