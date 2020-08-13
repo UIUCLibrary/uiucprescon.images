@@ -7,20 +7,20 @@ RUN wget -O /tmp/install_cmake.sh $CMAKE_DOWNLOAD_URL && \
     cmake --version
 
 RUN apt update && apt install -y ninja-build
-ARG PYTHON_INDEX=https://devpi.library.illinois.edu/production/release
+ARG PIP_INDEX_URL=https://devpi.library.illinois.edu/production/release
+ARG PIP_EXTRA_INDEX_URL
+ARG PIP_TRUSTED_HOST
+ENV PIP_NO_CACHE_DIR=1
 
+ADD requirements.txt ci/docker/shared/requirements-ci.txt ci/docker/shared/requirements-extra.txt /tmp/
 RUN python -m pip install --upgrade pip &&  \
     pip install wheel && \
     pip install setuptools --upgrade && \
-    pip install conan
-
-ADD requirements.txt ci/docker/shared/requirements-ci.txt ci/docker/shared/requirements-extra.txt /tmp/
-RUN pip wheel --no-cache-dir --wheel-dir=/wheels -i ${PYTHON_INDEX} \
+    pip wheel --wheel-dir=/wheels \
         -r /tmp/requirements.txt \
         -r /tmp/requirements-ci.txt && \
     rm -rf  /root/.cache && \
-    pip wheel --no-cache-dir --wheel-dir=/wheels -i ${PYTHON_INDEX} \
-        -r /tmp/requirements-extra.txt
+    pip wheel --wheel-dir=/wheels -r /tmp/requirements-extra.txt
 
 FROM python:${PYTHON_VERSION}
 ARG USER_ID=1000
@@ -29,15 +29,13 @@ ARG GROUP_ID=1000
 RUN groupadd -g $GROUP_ID user && \
     useradd -u $USER_ID -s /bin/sh -m -d /home/user -g user user
 
-COPY --from=wheel_builder /wheels /wheels/
-
 ENV PIP_FIND_LINKS=/wheels
-
+ENV PIP_NO_CACHE_DIR=1
+COPY --from=wheel_builder /wheels /wheels/
 ADD requirements.txt ci/docker/shared/requirements-ci.txt /tmp/
 RUN pip install --no-index --find-links=/wheels \
     -r /tmp/requirements.txt \
     -r /tmp/requirements-ci.txt
-ENV PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
-ENV PIP_TRUSTED_HOST="devpi.library.illinois.edu"
+
 USER user
 WORKDIR /home/user
