@@ -2,7 +2,7 @@
 @Library(["devpi", "PythonHelpers"]) _
 
 
-def CONFIGURATIONS = [
+CONFIGURATIONS = [
     "3.7" : [
         os: [
             windows: [
