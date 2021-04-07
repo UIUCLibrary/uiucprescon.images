@@ -337,33 +337,6 @@ pipeline {
     }
 
     stages {
-        stage("Getting Distribution Info"){
-            agent {
-                dockerfile {
-                    filename 'ci/docker/python/linux/Dockerfile'
-                    label 'linux && docker'
-                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                 }
-            }
-            steps{
-                sh "python setup.py dist_info"
-            }
-            post{
-                success{
-                    stash includes: "uiucprescon.images.dist-info/**", name: 'DIST-INFO'
-                    archiveArtifacts artifacts: "uiucprescon.images.dist-info/**"
-                }
-                cleanup{
-                    cleanWs(
-                        deleteDirs: true,
-                        patterns: [
-                            [pattern: "uiucprescon.images.dist-info/", type: 'INCLUDE'],
-                            [pattern: ".eggs/", type: 'INCLUDE'],
-                        ]
-                    )
-                }
-            }
-        }
         stage('Build') {
             stages {
                 stage("Sphinx Documentation"){
@@ -397,8 +370,8 @@ pipeline {
                                     zipFile: "dist/${props.Name}-${props.Version}.doc.zip"
                                 )
                                 stash(
-                                    name: 'DOCS_ARCHIVE'
-                                    includes: "dist/*.doc.zip,build/docs/html/**",
+                                    name: 'DOCS_ARCHIVE',
+                                    includes: 'dist/*.doc.zip,build/docs/html/**'
                                 )
                             }
                         }
