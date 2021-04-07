@@ -1084,7 +1084,7 @@ pipeline {
                         }
                     }
                 }
-                stage('Test DevPi packages') {
+                stage('Test DevPi Packages') {
                     steps{
                         script{
                             def devpi
