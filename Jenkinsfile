@@ -249,6 +249,76 @@ def get_package_name(stashName, metadataFile){
     }
 }
 
+
+def startup(){
+    node('linux && docker') {
+        try{
+            checkout scm
+            docker.image('python').inside {
+                timeout(2){
+                    stage('Getting Distribution Info'){
+                        sh(
+                           label: 'Running setup.py with dist_info',
+                           script: """python --version
+                                      python setup.py dist_info
+                                   """
+                        )
+                        stash includes: '*.dist-info/**', name: 'DIST-INFO'
+                        archiveArtifacts artifacts: '*.dist-info/**'
+                    }
+                }
+            }
+        } finally{
+            cleanWs(
+               deleteDirs: true,
+               patterns: [
+                  [pattern: '*.dist-info/', type: 'INCLUDE'],
+                  [pattern: '**/__pycache__', type: 'INCLUDE'],
+                  [pattern: '.eggs/', type: 'INCLUDE'],
+              ]
+
+           )
+        }
+    }
+}
+def get_props(){
+    stage('Reading Package Metadata'){
+        node() {
+            try{
+                unstash 'DIST-INFO'
+                def metadataFile = findFiles( glob: '*.dist-info/METADATA')[0]
+                def packageMetadata = readProperties(
+                    interpolate: true,
+                    file: metadataFile.path
+                    )
+                if(packageMetadata.Name == null){
+                    error("No 'Name' located in ${metadataFile.path} file")
+                }
+
+                if(packageMetadata.Version == null){
+                    error("No 'Version' located in ${metadataFile.path} file")
+                }
+
+                echo """Metadata for ${metadataFile.path}:
+
+Name      ${packageMetadata.Name}
+Version   ${packageMetadata.Version}
+"""
+                return packageMetadata
+            } finally {
+                cleanWs(
+                    deleteDirs: true,
+                    patterns: [
+                            [pattern: '*.dist-info/', type: 'INCLUDE'],
+                        ]
+                    )
+            }
+        }
+    }
+}
+startup()
+props = get_props()
+
 pipeline {
     agent none
     options {
@@ -295,30 +365,14 @@ pipeline {
             }
         }
         stage('Build') {
-            parallel {
-                stage("Python Package"){
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/python/linux/Dockerfile'
-                            label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                         }
-                    }
-                    steps {
-                        sh "python setup.py build -b build"
-                    }
-                }
+            stages {
                 stage("Sphinx Documentation"){
                     agent{
                         dockerfile {
                             filename 'ci/docker/python/linux/Dockerfile'
                             label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                         }
-                    }
-                    environment{
-                        PKG_NAME = get_package_name("DIST-INFO", "uiucprescon.images.dist-info/METADATA")
-                        PKG_VERSION = get_package_version("DIST-INFO", "uiucprescon.images.dist-info/METADATA")
                     }
                     steps {
                         sh(
@@ -336,18 +390,25 @@ pipeline {
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                             script{
-                                def DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
-                                zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
-                                stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
+                                zip(
+                                    archive: true,
+                                    dir: "${WORKSPACE}/build/docs/html",
+                                    glob: '',
+                                    zipFile: "dist/${props.Name}-${props.Version}.doc.zip"
+                                )
+                                stash(
+                                    name: 'DOCS_ARCHIVE'
+                                    includes: "dist/*.doc.zip,build/docs/html/**",
+                                )
                             }
-
                         }
                         cleanup{
                             cleanWs(
                                 patterns: [
                                     [pattern: 'logs/', type: 'INCLUDE'],
                                     [pattern: "build/docs/", type: 'INCLUDE'],
-                                    [pattern: "dist/", type: 'INCLUDE']
+                                    [pattern: "dist/", type: 'INCLUDE'],
+                                    [pattern: '**/__pycache__', type: 'INCLUDE'],
                                 ],
                                 deleteDirs: true
                             )
@@ -366,7 +427,7 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/python/linux/Dockerfile'
                             label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                         }
                     }
                     stages{
@@ -549,7 +610,7 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/python/linux/Dockerfile'
                             label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                             args '--mount source=sonar-cache-uiucprescon-images,target=/home/user/.sonar/cache'
                         }
                     }
@@ -569,8 +630,6 @@ pipeline {
                         unstash "FLAKE8_REPORT"
                         script{
                             withSonarQubeEnv(installationName:"sonarcloud", credentialsId: 'sonarcloud-uiucprescon.images') {
-                                unstash "DIST-INFO"
-                                def props = readProperties(interpolate: true, file: "uiucprescon.images.dist-info/METADATA")
                                 if (env.CHANGE_ID){
                                     sh(
                                         label: "Running Sonar Scanner",
@@ -637,7 +696,7 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/python/linux/Dockerfile'
                             label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                         }
                     }
                     steps{
@@ -835,7 +894,7 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/python/linux/Dockerfile'
                             label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                           }
                     }
                     steps {
@@ -899,10 +958,7 @@ pipeline {
                                   }
                                 }
                                 steps{
-                                    unstash "DIST-INFO"
                                     script{
-                                        def props = readProperties interpolate: true, file: "uiucprescon.images.dist-info/METADATA"
-
                                         if(isUnix()){
                                             sh(
                                                 label: "Running tests on DevPi",
@@ -942,13 +998,11 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/python/linux/Dockerfile'
                             label 'linux&&docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                         }
                     }
                     steps {
                         script {
-                            unstash "DIST-INFO"
-                            def props = readProperties interpolate: true, file: 'uiucprescon.images.dist-info/METADATA'
                             try{
                                 timeout(30) {
                                     input "Release ${props.Name} ${props.Version} (https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging/${props.Name}/${props.Version}) to DevPi Production? "
@@ -966,9 +1020,7 @@ pipeline {
                     node('linux && docker') {
                         checkout scm
                         script{
-                            docker.build("uiucprescon.images:devpi",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
-                                unstash "DIST-INFO"
-                                def props = readProperties interpolate: true, file: 'uiucprescon.images.dist-info/METADATA'
+                            docker.build("uiucprescon.images:devpi",'-f ./ci/docker/python/linux/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
                                 sh(
                                     label: "Connecting to DevPi Server",
                                     script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
@@ -982,9 +1034,7 @@ pipeline {
                 cleanup{
                     node('linux && docker') {
                        script{
-                            docker.build("uiucprescon.images:devpi",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
-                                unstash "DIST-INFO"
-                                def props = readProperties interpolate: true, file: 'uiucprescon.images.dist-info/METADATA'
+                            docker.build("uiucprescon.images:devpi",'-f ./ci/docker/python/linux/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
                                 sh(
                                     label: "Connecting to DevPi Server",
                                     script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
@@ -1025,9 +1075,7 @@ pipeline {
                           }
                     }
                     steps{
-                        unstash "DIST-INFO"
                         script{
-                            def props = readProperties interpolate: true, file: "uiucprescon.images.dist-info/METADATA"
                             def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
                             withCredentials([usernamePassword(credentialsId: gitCreds, passwordVariable: 'password', usernameVariable: 'username')]) {
                                 sh(label: "Tagging ${commitTag}",
@@ -1067,7 +1115,7 @@ pipeline {
                                         makeEmptyDirs: false,
                                         noDefaultExcludes: false,
                                         patternSeparator: '[, ]+',
-                                        remoteDirectory: "${env.PKG_NAME}",
+                                        remoteDirectory: props.Name,
                                         remoteDirectorySDF: false,
                                         removePrefix: '',
                                         sourceFiles: '**')],
