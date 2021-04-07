@@ -1108,7 +1108,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: getMacDevpiName(pythonVersion, 'wheel'),
+                                            selector: 'whl'
                                         ],
                                         test:[
                                             setup: {
@@ -1167,7 +1167,7 @@ pipeline {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
-                                                filename: 'ci/docker/python/windows/msvc/tox/Dockerfile',
+                                                filename: 'ci/docker/python/windows/tox/Dockerfile',
                                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
                                                 label: 'windows && docker'
                                             ]
@@ -1192,7 +1192,7 @@ pipeline {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
-                                                filename: 'ci/docker/python/windows/msvc/tox_no_vs/Dockerfile',
+                                                filename: 'ci/docker/python/windows/tox/Dockerfile',
                                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
                                                 label: 'windows && docker'
                                             ]
@@ -1206,7 +1206,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "(${pythonVersion.replace('.','')}).*(win_amd64\\.whl)"
+                                            selector: 'whl'
                                         ],
                                         test:[
                                             toxEnv: "py${pythonVersion}".replace('.',''),
@@ -1257,7 +1257,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "(${pythonVersion.replace('.','')}).*(manylinux).*(\\.whl)"
+                                            selector: 'whl'
                                         ],
                                         test:[
                                             toxEnv: "py${pythonVersion}".replace('.',''),
