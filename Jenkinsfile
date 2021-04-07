@@ -1,7 +1,7 @@
 #!groovy
 @Library(["devpi", "PythonHelpers"]) _
 
-
+SONARQUBE_CREDENTIAL_ID = 'sonarcloud-uiucprescon.images'SONARQUBE_CREDENTIAL_ID = 'sonarcloud-uiucprescon.images'
 CONFIGURATIONS = [
     "3.7" : [
         os: [
@@ -248,38 +248,59 @@ def get_package_name(stashName, metadataFile){
         }
     }
 }
+defaultParameterValues = [
+    USE_SONARQUBE: false
+]
 
 
 def startup(){
-    node('linux && docker') {
-        try{
-            checkout scm
-            docker.image('python').inside {
-                timeout(2){
-                    stage('Getting Distribution Info'){
-                        sh(
-                           label: 'Running setup.py with dist_info',
-                           script: """python --version
-                                      python setup.py dist_info
-                                   """
-                        )
-                        stash includes: '*.dist-info/**', name: 'DIST-INFO'
-                        archiveArtifacts artifacts: '*.dist-info/**'
+    parallel(
+        [
+            failFast: true,
+            'Checking sonarqube Settings': {
+                def SONARQUBE_CREDENTIAL_ID = SONARQUBE_CREDENTIAL_ID
+                node(){
+                    try{
+                        withCredentials([string(credentialsId: SONARQUBE_CREDENTIAL_ID, variable: 'dddd')]) {
+                            echo 'Found credentials for sonarqube'
+                        }
+                        defaultParameterValues.USE_SONARQUBE = true
+                    } catch(e){
+                        echo "Setting defaultValue for USE_SONARQUBE to false. Reason: ${e}"
+                        defaultParameterValues.USE_SONARQUBE = false
+                    }
+                }
+            },
+            'Getting Distribution Info': {
+                node('linux && docker') {
+                    try{
+                        checkout scm
+                        docker.image('python').inside {
+                            timeout(2){
+                                sh(
+                                   label: 'Running setup.py with dist_info',
+                                   script: """python --version
+                                              python setup.py dist_info
+                                           """
+                                )
+                                stash includes: '*.dist-info/**', name: 'DIST-INFO'
+                                archiveArtifacts artifacts: '*.dist-info/**'
+                            }
+                        }
+                    } finally{
+                        cleanWs(
+                           deleteDirs: true,
+                           patterns: [
+                              [pattern: '*.dist-info/', type: 'INCLUDE'],
+                              [pattern: '**/__pycache__', type: 'INCLUDE'],
+                              [pattern: '.eggs/', type: 'INCLUDE'],
+                          ]
+                       )
                     }
                 }
             }
-        } finally{
-            cleanWs(
-               deleteDirs: true,
-               patterns: [
-                  [pattern: '*.dist-info/', type: 'INCLUDE'],
-                  [pattern: '**/__pycache__', type: 'INCLUDE'],
-                  [pattern: '.eggs/', type: 'INCLUDE'],
-              ]
-
-           )
-        }
-    }
+        ]
+    )
 }
 def get_props(){
     stage('Reading Package Metadata'){
@@ -328,7 +349,7 @@ pipeline {
     parameters {
         booleanParam(name: "RUN_CHECKS", defaultValue: true, description: "Run checks on code")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
-        booleanParam(name: "USE_SONARQUBE", defaultValue: true, description: "Send data test data to SonarQube")
+        booleanParam(name: "USE_SONARQUBE", defaultValue: defaultParameterValues.USE_SONARQUBE, description: "Send data test data to SonarQube")
         booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Python packages")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
