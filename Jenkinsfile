@@ -486,11 +486,11 @@ pipeline {
                                                 catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
                                                     sh(label: "Running pylint",
                                                        script: '''mkdir -p reports
-                                                                  PYLINTHOME=/tmp/pylint pylint uiucprescon  -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt
+                                                                  pylint uiucprescon --persistent=n -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt
                                                                '''
                                                     )
                                                     sh(
-                                                        script: 'PYLINTHOME=/tmp/pylint pylint uiucprescon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint_issues.txt',
+                                                        script: 'pylint uiucprescon --persistent=n  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint_issues.txt',
                                                         label: "Running pylint for sonarqube",
                                                         returnStatus: true
                                                     )
