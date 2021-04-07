@@ -1,5 +1,5 @@
 #!groovy
-@Library(["devpi", "PythonHelpers"]) _
+// @Library(["devpi", "PythonHelpers"]) _
 
 SONARQUBE_CREDENTIAL_ID = 'sonarcloud-uiucprescon.images'
 CONFIGURATIONS = [
@@ -246,7 +246,7 @@ def startup(){
     parallel(
         [
             failFast: true,
-            'Checking sonarqube Settings': {
+            'Checking Sonarqube Settings': {
                 def SONARQUBE_CREDENTIAL_ID = SONARQUBE_CREDENTIAL_ID
                 node(){
                     try{
@@ -301,6 +301,7 @@ def get_props(){
                     interpolate: true,
                     file: metadataFile.path
                     )
+
                 if(packageMetadata.Name == null){
                     error("No 'Name' located in ${metadataFile.path} file")
                 }
@@ -331,13 +332,9 @@ props = get_props()
 
 pipeline {
     agent none
-    options {
-        buildDiscarder logRotator(artifactDaysToKeepStr: '10', artifactNumToKeepStr: '10')
-        preserveStashes(buildCount: 5)
-    }
     parameters {
         booleanParam(name: "RUN_CHECKS", defaultValue: true, description: "Run checks on code")
-        booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
+        booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
         booleanParam(name: "USE_SONARQUBE", defaultValue: defaultParameterValues.USE_SONARQUBE, description: "Send data test data to SonarQube")
         booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Python packages")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
@@ -728,9 +725,9 @@ pipeline {
                     }
                 }
                 stage("Testing Packages"){
-                    options{
-                        timestamps()
-                    }
+//                     options{
+//                         timestamps()
+//                     }
                     matrix{
                         axes {
                             axis {
