@@ -126,9 +126,14 @@ RUN py -m pip install --upgrade pip && `
 # ==============================================================================
 FROM CHOCOLATEY_BASE
 COPY --from=WHEEL_BUILDER_PY36 C:/wheels/ c:/wheels/
+RUN py -3.6 -m pip install pip --upgrade
 COPY --from=WHEEL_BUILDER_PY37 C:/wheels/ c:/wheels/
+RUN py -3.7 -m pip install pip --upgrade
 COPY --from=WHEEL_BUILDER_PY38 C:/wheels/ c:/wheels/
+RUN py -3.8 -m pip install pip --upgrade
 COPY --from=WHEEL_BUILDER_PY39 C:/wheels/ c:/wheels/
+RUN py -3.9 -m pip install pip --upgrade
+
 RUN python -m pip install pip --upgrade ; `
     python -m pip install wheel ; `
     python -m pip wheel -w c:\wheels\ --no-cache-dir wheel ; `

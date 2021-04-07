@@ -80,9 +80,14 @@ ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 
 COPY --from=wheel_builder_py36 /wheels/* /wheels/
+RUN python3.6 -m pip install pip --upgrade
 COPY --from=wheel_builder_py37 /wheels/* /wheels/
+RUN python3.7 -m pip install pip --upgrade
 COPY --from=wheel_builder_py38 /wheels/* /wheels/
+RUN python3.8 -m pip install pip --upgrade
 COPY --from=wheel_builder_py39 /wheels/* /wheels/
+RUN python3.9 -m pip install pip --upgrade
+
 RUN chmod -R 777 /wheels
 ENV PIP_FIND_LINKS=/wheels
 RUN pip3 install tox devpi_client build && \
