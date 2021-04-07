@@ -4,6 +4,6 @@ flake8
 devpi-client
 lxml
 mypy
-pep517
+build
 pylint
 tox
