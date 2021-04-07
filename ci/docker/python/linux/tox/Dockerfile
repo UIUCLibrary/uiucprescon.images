@@ -90,7 +90,7 @@ RUN python3.9 -m pip install pip --upgrade
 
 RUN chmod -R 777 /wheels
 ENV PIP_FIND_LINKS=/wheels
-RUN pip3 install tox devpi_client build && \
+RUN python3 -m pip install tox devpi_client build && \
     python3 -m build -h
 
 WORKDIR /src
