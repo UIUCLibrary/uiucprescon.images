@@ -357,6 +357,7 @@ pipeline {
         booleanParam(name: "BUILD_PACKAGES", defaultValue: true, description: "Build Python packages")
 //         todo set default to true
         booleanParam(name: 'TEST_PACKAGES', defaultValue: false, description: 'Test Python packages')
+        booleanParam(name: 'BUILD_MAC_PACKAGES', defaultValue: false, description: 'Test Python packages on Mac')
 //         todo set default to false
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
