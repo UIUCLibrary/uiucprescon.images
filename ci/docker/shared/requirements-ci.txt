@@ -6,4 +6,5 @@ lxml
 mypy
 build
 pylint
+pydocstyle
 tox
