@@ -13,9 +13,7 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
     Attributes:
         name (str): The human-readable name given to type of file being
             generated
-        source_file (str): File being used to generate a new image
-        destination_file (str): A file name that the conversion method can use
-            to save to.
+
     """
 
     def __init__(self,
@@ -24,8 +22,9 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
         """Initialize a conversion.
 
         Args:
-            source_file:
-            destination_file:
+            source_file: File being used to generate a new image
+            destination_file: A file name that the conversion method can
+                use to save to.
         """
         self._source_file = source_file
         self._destination_file = destination_file
@@ -38,7 +37,7 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
 
     @property
     def source_file(self) -> Optional[str]:
-        """Source file name."""
+        """File being used to generate a new image."""
         return self._source_file
 
     @source_file.setter
