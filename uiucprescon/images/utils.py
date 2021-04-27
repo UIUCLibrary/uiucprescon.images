@@ -1,8 +1,8 @@
 """
 
 """
-from . import formats
 import inspect
+from . import formats
 image_formats = dict()  #:
 
 
