@@ -1173,6 +1173,8 @@ pipeline {
                     }
                     steps {
                         script{
+                            checkout scm
+                            devpi = load 'ci/jenkins/scripts/devpi.groovy'
                             echo "Pushing to production/release index"
                             devpi.pushPackageToIndex(
                                 pkgName: props.Name,
