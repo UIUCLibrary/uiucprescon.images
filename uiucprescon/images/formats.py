@@ -1,6 +1,6 @@
 import abc
-import pykdu_compress  # type: ignore
 from typing import Optional
+import pykdu_compress  # type: ignore
 
 
 class AbsImageConvert(metaclass=abc.ABCMeta):
@@ -16,7 +16,10 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
             to save to.
     """
 
-    def __init__(self, source_file=None, destination_file=None):
+    def __init__(self,
+                 source_file: Optional[str] = None,
+                 destination_file: Optional[str] = None) -> None:
+
         self._source_file = source_file
         self._destination_file = destination_file
 
@@ -27,23 +30,23 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
     """
 
     @property
-    def source_file(self) -> str:
+    def source_file(self) -> Optional[str]:
         return self._source_file
 
     @source_file.setter
-    def source_file(self, value):
+    def source_file(self, value: str) -> None:
         self._source_file = value
 
     @property
-    def destination_file(self) -> str:
+    def destination_file(self) -> Optional[str]:
         return self._destination_file
 
     @destination_file.setter
-    def destination_file(self, value):
+    def destination_file(self, value: str) -> None:
         self._destination_file = value
 
     @abc.abstractmethod
-    def convert(self):
+    def convert(self) -> None:
         """Execute the conversion of the source file into a file with the
         name specified by the destination_file attribute"""
 
@@ -57,7 +60,7 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
     @classmethod
     @property
     @abc.abstractmethod
-    def name(cls):
+    def name(cls) -> str:
         raise NotImplementedError
 
 
@@ -66,7 +69,7 @@ class HathiJP2(AbsImageConvert):
 
     name = "HathiTrust JPEG 2000"
 
-    def convert(self):
+    def convert(self) -> None:
 
         kakadu_args = ["Clevels=5",
                        "Clayers=8",
@@ -87,6 +90,6 @@ class HathiJP2(AbsImageConvert):
 class DigitalLibraryJP2(AbsImageConvert):
     name = "Digital Library JPEG 2000"
 
-    def convert(self):
+    def convert(self) -> None:
         pykdu_compress.kdu_compress_cli2(
             self.source_file, self.destination_file)

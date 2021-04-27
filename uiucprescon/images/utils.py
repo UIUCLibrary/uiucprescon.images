@@ -6,7 +6,7 @@ from . import formats
 image_formats = dict()  #:
 
 
-def load_image_formats():
+def load_image_formats() -> None:
     for _, subclass in \
             inspect.getmembers(
                 formats,
