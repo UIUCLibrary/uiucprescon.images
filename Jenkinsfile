@@ -548,6 +548,24 @@ pipeline {
                                                 }
                                             }
                                         }
+                                        stage("pyDocStyle"){
+                                            steps{
+                                                catchError(buildResult: 'SUCCESS', message: 'Did not pass all pyDocStyle tests', stageResult: 'UNSTABLE') {
+
+                                                    tee('reports/pydocstyle-report.txt'){
+                                                        sh(
+                                                            label: "Run pydocstyle",
+                                                            script: 'pydocstyle uiucprescon'
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            post {
+                                                always{
+                                                    recordIssues(tools: [pyDocStyle(pattern: 'reports/pydocstyle-report.txt')])
+                                                }
+                                            }
+                                        }
                                     }
                                     post{
                                         always{

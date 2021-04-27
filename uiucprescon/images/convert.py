@@ -1,3 +1,5 @@
+"""Build and run conversion commands."""
+
 from typing import Union
 from . import formats
 from . import utils
@@ -5,7 +7,7 @@ from . import utils
 
 def convert_image(source: str, output_file: str,
                   output_format: Union[str, formats.AbsImageConvert]) -> None:
-    """Convert image from one file format into another
+    """Convert image from one file format into another.
 
     Args:
         source: Source file to convert
@@ -13,7 +15,6 @@ def convert_image(source: str, output_file: str,
         output_format: Desired output format
 
     """
-
     if isinstance(output_format, formats.AbsImageConvert):
         converter = output_format
     else:

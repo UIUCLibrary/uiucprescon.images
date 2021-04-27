@@ -1,3 +1,5 @@
+"""Module for converting files."""
+
 from .convert import convert_image
 from .utils import image_formats
 
