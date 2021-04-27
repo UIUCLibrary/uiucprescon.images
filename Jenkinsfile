@@ -551,12 +551,13 @@ pipeline {
                                         stage("pyDocStyle"){
                                             steps{
                                                 catchError(buildResult: 'SUCCESS', message: 'Did not pass all pyDocStyle tests', stageResult: 'UNSTABLE') {
-                                                    sh(
-                                                        label: "Run pydocstyle",
-                                                        script: '''mkdir -p reports
-                                                                   pydocstyle uiucprescon > reports/pydocstyle-report.txt
-                                                                   '''
-                                                    )
+
+                                                    tee('reports/pydocstyle-report.txt'){
+                                                        sh(
+                                                            label: "Run pydocstyle",
+                                                            script: 'pydocstyle uiucprescon'
+                                                        )
+                                                    }
                                                 }
                                             }
                                             post {
