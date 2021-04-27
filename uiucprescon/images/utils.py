@@ -1,12 +1,12 @@
-"""
+"""Utilities module."""
 
-"""
 import inspect
 from . import formats
 image_formats = dict()  #:
 
 
 def load_image_formats() -> None:
+    """Load image formats supported in the module variable image_formats."""
     for _, subclass in \
             inspect.getmembers(
                 formats,

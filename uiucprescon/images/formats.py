@@ -1,3 +1,5 @@
+"""This module holds all the image format information."""
+
 import abc
 from typing import Optional
 import pykdu_compress  # type: ignore
@@ -19,7 +21,12 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
     def __init__(self,
                  source_file: Optional[str] = None,
                  destination_file: Optional[str] = None) -> None:
+        """Initialize a conversion.
 
+        Args:
+            source_file:
+            destination_file:
+        """
         self._source_file = source_file
         self._destination_file = destination_file
 
@@ -31,6 +38,7 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
 
     @property
     def source_file(self) -> Optional[str]:
+        """Source file name."""
         return self._source_file
 
     @source_file.setter
@@ -39,6 +47,7 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
 
     @property
     def destination_file(self) -> Optional[str]:
+        """Output file name."""
         return self._destination_file
 
     @destination_file.setter
@@ -47,8 +56,7 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def convert(self) -> None:
-        """Execute the conversion of the source file into a file with the
-        name specified by the destination_file attribute"""
+        """Execute the conversion."""
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
@@ -61,16 +69,17 @@ class AbsImageConvert(metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def name(cls) -> str:
+        """Name of the file format."""
         raise NotImplementedError
 
 
 class HathiJP2(AbsImageConvert):
-    """HathiTrust compatible JPEG2000 files"""
+    """HathiTrust compatible JPEG2000 files."""
 
     name = "HathiTrust JPEG 2000"
 
     def convert(self) -> None:
-
+        """Convert file."""
         kakadu_args = ["Clevels=5",
                        "Clayers=8",
                        "Corder=RLCP",
@@ -88,8 +97,11 @@ class HathiJP2(AbsImageConvert):
 
 
 class DigitalLibraryJP2(AbsImageConvert):
+    """JPEG 2000 format for UIUC Medusa/Digital Library."""
+
     name = "Digital Library JPEG 2000"
 
     def convert(self) -> None:
+        """Convert file."""
         pykdu_compress.kdu_compress_cli2(
             self.source_file, self.destination_file)
