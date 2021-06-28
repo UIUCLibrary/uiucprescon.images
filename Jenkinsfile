@@ -621,6 +621,7 @@ pipeline {
 
                             options{
                                 lock("uiucprescon.images-sonarscanner")
+                                retry(3)
                             }
                             when{
                                 equals expected: true, actual: params.USE_SONARQUBE
