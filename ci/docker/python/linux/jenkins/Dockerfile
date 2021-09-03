@@ -32,7 +32,7 @@ RUN curl --create-dirs -sSLo /tmp/sonar-scanner.zip \
     which sonar-scanner
 
 FROM python:${PYTHON_VERSION}
-RUN apt update && apt install -y libenchant1c2a
+RUN #apt update && apt install -y libenchant1c2a
 
 COPY --from=SONAR_BUILDER /opt/sonar /opt/sonar/
 ENV SONAR_SCANNER_VERSION=4.4.0.2170
