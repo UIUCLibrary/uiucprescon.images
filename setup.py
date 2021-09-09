@@ -9,5 +9,6 @@ setup(
     tests_require=[
         'pytest',
     ],
+    package_data={"uiucprescon.images": ["py.typed"]},
     zip_safe=False,
 )
