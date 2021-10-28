@@ -11,8 +11,6 @@ RUN mkdir -p /.cache/pip && \
 
 # ******************************************************************************
 FROM wheel_builder_base as wheel_builder_py36
-
-RUN apt install -y python3.6-dev python3.6-venv
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 
@@ -27,7 +25,6 @@ RUN $PYTHON -m pip install pip --upgrade pip && \
 
 # ==============================================================================
 FROM wheel_builder_base as wheel_builder_py37
-RUN apt install -y python3.7-dev python3.7-venv
 
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
@@ -42,7 +39,6 @@ RUN $PYTHON -m pip install pip --upgrade pip && \
 
 # ==============================================================================
 FROM wheel_builder_base as wheel_builder_py38
-RUN apt install -y python3.8-dev python3.8-venv
 
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
@@ -58,7 +54,6 @@ RUN $PYTHON -m pip install pip --upgrade pip && \
 
 # ==============================================================================
 FROM wheel_builder_base as wheel_builder_py39
-RUN apt install -y python3.9-dev python3.9-venv
 
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
