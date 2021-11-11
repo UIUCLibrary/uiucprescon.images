@@ -909,7 +909,7 @@ pipeline {
                                     }
                                 }
                             }
-                            if(params.TEST_PACKAGES_ON_MAC == true){
+                            if(params.BUILD_MAC_PACKAGES == true){
                                 tests = tests + macTests
                             }
                             parallel(tests)
