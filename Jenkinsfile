@@ -992,6 +992,7 @@ pipeline {
                                             credentialsId: DEVPI_CONFIG.credentialsId,
                                             devpiExec: 'venv/bin/devpi'
                                         ],
+                                        retryTimes: 3,
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
@@ -1025,6 +1026,7 @@ pipeline {
                                             credentialsId: DEVPI_CONFIG.credentialsId,
                                             devpiExec: 'venv/bin/devpi'
                                         ],
+                                        retryTimes: 3,
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
@@ -1065,6 +1067,7 @@ pipeline {
                                             server: DEVPI_CONFIG.server,
                                             credentialsId: DEVPI_CONFIG.credentialsId,
                                         ],
+                                        retryTimes: 3,
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
