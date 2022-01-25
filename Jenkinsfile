@@ -1307,41 +1307,78 @@ pipeline {
                         }
                     }
                 }
-                stage("Deploy Online Documentation") {
-                    agent any
+                 stage('Deploy Online Documentation') {
                     when{
                         equals expected: true, actual: params.DEPLOY_DOCS
                         beforeAgent true
+                        beforeInput true
+                    }
+                    agent{
+                        dockerfile {
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                            label 'linux && docker'
+                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                        }
+                    }
+                    options{
+                        timeout(time: 1, unit: 'DAYS')
+                    }
+                    input{
+                        message 'Update project documentation?'
                     }
                     steps{
-                        unstash "DOCS_ARCHIVE"
-                        dir("build/docs/html/"){
-                            input 'Update project documentation?'
-                            sshPublisher(
-                                publishers: [
-                                    sshPublisherDesc(
-                                        configName: 'apache-ns - lib-dccuser-updater',
-                                        sshLabel: [label: 'Linux'],
-                                        transfers: [sshTransfer(excludes: '',
-                                        execCommand: '',
-                                        execTimeout: 120000,
-                                        flatten: false,
-                                        makeEmptyDirs: false,
-                                        noDefaultExcludes: false,
-                                        patternSeparator: '[, ]+',
-                                        remoteDirectory: props.Name,
-                                        remoteDirectorySDF: false,
-                                        removePrefix: '',
-                                        sourceFiles: '**')],
-                                    usePromotionTimestamp: false,
-                                    useWorkspaceInPromotion: false,
-                                    verbose: true
-                                    )
+                        unstash 'DOCS_ARCHIVE'
+                        withCredentials([usernamePassword(credentialsId: 'dccdocs-server', passwordVariable: 'docsPassword', usernameVariable: 'docsUsername')]) {
+                            sh 'python utils/upload_docs.py --username=$docsUsername --password=$docsPassword --subroute=uiucprescon.images build/docs/html apache-ns.library.illinois.edu'
+                        }
+                    }
+                    post{
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: 'build/', type: 'INCLUDE'],
+                                    [pattern: 'dist/', type: 'INCLUDE'],
                                 ]
                             )
                         }
                     }
                 }
+//                 stage("Deploy Online Documentation") {
+//                     agent any
+//                     when{
+//                         equals expected: true, actual: params.DEPLOY_DOCS
+//                         beforeAgent true
+//                     }
+//                     steps{
+//                         unstash "DOCS_ARCHIVE"
+//                         dir("build/docs/html/"){
+//                             input 'Update project documentation?'
+//                             sshPublisher(
+//                                 publishers: [
+//                                     sshPublisherDesc(
+//                                         configName: 'apache-ns - lib-dccuser-updater',
+//                                         sshLabel: [label: 'Linux'],
+//                                         transfers: [sshTransfer(excludes: '',
+//                                         execCommand: '',
+//                                         execTimeout: 120000,
+//                                         flatten: false,
+//                                         makeEmptyDirs: false,
+//                                         noDefaultExcludes: false,
+//                                         patternSeparator: '[, ]+',
+//                                         remoteDirectory: props.Name,
+//                                         remoteDirectorySDF: false,
+//                                         removePrefix: '',
+//                                         sourceFiles: '**')],
+//                                     usePromotionTimestamp: false,
+//                                     useWorkspaceInPromotion: false,
+//                                     verbose: true
+//                                     )
+//                                 ]
+//                             )
+//                         }
+//                     }
+//                 }
             }
         }
     }

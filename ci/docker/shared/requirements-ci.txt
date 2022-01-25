@@ -1,10 +1,11 @@
 bandit<=1.6
+build
 coverage
 flake8
 devpi-client
 lxml
 mypy
-build
+paramiko
 pylint
 pydocstyle
 tox
