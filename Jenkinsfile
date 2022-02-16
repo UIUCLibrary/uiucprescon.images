@@ -798,6 +798,7 @@ pipeline {
                                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
                                             ]
                                         ],
+                                        retryTimes: 3,
                                         glob: 'dist/*.tar.gz,dist/*.zip',
                                         stash: 'PYTHON_PACKAGES',
                                         pythonVersion: pythonVersion
@@ -812,6 +813,7 @@ pipeline {
                                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
                                             ]
                                         ],
+                                        retryTimes: 3,
                                         glob: 'dist/*.whl',
                                         stash: 'PYTHON_PACKAGES',
                                         pythonVersion: pythonVersion
@@ -829,6 +831,7 @@ pipeline {
                                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                                             ]
                                         ],
+                                        retryTimes: 3,
                                         glob: 'dist/*.tar.gz',
                                         stash: 'PYTHON_PACKAGES',
                                         pythonVersion: pythonVersion
@@ -843,6 +846,7 @@ pipeline {
                                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                                             ]
                                         ],
+                                        retryTimes: 3,
                                         glob: 'dist/*.whl',
                                         stash: 'PYTHON_PACKAGES',
                                         pythonVersion: pythonVersion
