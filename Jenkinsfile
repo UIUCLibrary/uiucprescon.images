@@ -377,7 +377,7 @@ pipeline {
                     agent{
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                            label 'linux && docker'
+                            label 'linux && docker && x86'
                             additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                         }
                     }
@@ -433,7 +433,7 @@ pipeline {
                     agent {
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                            label 'linux && docker'
+                            label 'linux && docker && x86'
                             additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                             args '--mount source=sonar-cache-uiucprescon-images,target=/home/user/.sonar/cache'
                         }
@@ -710,7 +710,7 @@ pipeline {
                                     "Linux":{
                                         linuxJobs = tox.getToxTestsParallel(
                                                 envNamePrefix: "Tox Linux",
-                                                label: "linux && docker",
+                                                label: "linux && docker && x86",
                                                 dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
                                                 dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                             )
@@ -718,7 +718,7 @@ pipeline {
                                     "Windows":{
                                         windowsJobs = tox.getToxTestsParallel(
                                                 envNamePrefix: "Tox Windows",
-                                                label: "windows && docker",
+                                                label: "windows && docker && x86",
                                                 dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
                                                 dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
                                          )
@@ -746,7 +746,7 @@ pipeline {
                     agent {
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                            label 'linux && docker'
+                            label 'linux && docker && x86'
                             additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                         }
                     }
@@ -826,7 +826,7 @@ pipeline {
                                     packages.testPkg(
                                         agent: [
                                             dockerfile: [
-                                                label: 'linux && docker',
+                                                label: 'linux && docker && x86',
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
                                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                                             ]
@@ -841,7 +841,7 @@ pipeline {
                                     packages.testPkg(
                                         agent: [
                                             dockerfile: [
-                                                label: 'linux && docker',
+                                                label: 'linux && docker && x86',
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
                                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                                             ]
@@ -943,7 +943,7 @@ pipeline {
                     agent {
                         dockerfile {
                             filename 'ci/docker/python/linux/tox/Dockerfile'
-                            label 'linux && docker'
+                            label 'linux && docker && x86'
                             additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                           }
                     }
@@ -1116,7 +1116,7 @@ pipeline {
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
                                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                label: 'linux && docker'
+                                                label: 'linux && docker && x86'
                                             ]
                                         ],
                                         devpi: [
@@ -1140,7 +1140,7 @@ pipeline {
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
                                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                label: 'linux && docker'
+                                                label: 'linux && docker && x86'
                                             ]
                                         ],
                                         devpi: [
@@ -1189,7 +1189,7 @@ pipeline {
                     agent {
                         dockerfile {
                             filename 'ci/docker/python/linux/tox/Dockerfile'
-                            label 'linux && docker'
+                            label 'linux && docker && x86'
                             additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                         }
                     }
@@ -1212,7 +1212,7 @@ pipeline {
             }
             post{
                 success{
-                    node('linux && docker') {
+                    node('linux && docker && x86') {
                         script{
                             if (!env.TAG_NAME?.trim()){
                                 checkout scm
@@ -1232,7 +1232,7 @@ pipeline {
                     }
                 }
                 cleanup{
-                    node('linux && docker') {
+                    node('linux && docker && x86') {
                         script{
                             checkout scm
                             devpi = load 'ci/jenkins/scripts/devpi.groovy'
@@ -1257,7 +1257,7 @@ pipeline {
                     agent{
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                            label 'linux && docker'
+                            label 'linux && docker && x86'
                             additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                         }
                     }
@@ -1320,7 +1320,7 @@ pipeline {
                     agent{
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                            label 'linux && docker'
+                            label 'linux && docker && x86'
                             additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                         }
                     }
