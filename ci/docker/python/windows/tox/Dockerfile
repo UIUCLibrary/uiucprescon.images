@@ -143,7 +143,7 @@ RUN py -3.10 -m pip install pip --upgrade
 RUN python -m pip install pip --upgrade ; `
     python -m pip install wheel ; `
     python -m pip wheel -w c:\wheels\ --no-cache-dir wheel ; `
-    python -m pip install tox devpi_client
+    python -m pip install tox "devpi-client<6.0"
 ENV PIP_FIND_LINKS=c:\wheels
 WORKDIR C:/src
 CMD tox --workdir ${Env:TEMP}\tox\ -vv  --recreate

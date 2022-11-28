@@ -95,7 +95,7 @@ ENV PIP_FIND_LINKS=/wheels
 RUN python3 -m pip install --upgrade pip && \
     python3 -m pip install wheel && \
     python3 -m pip wheel -w /wheels --no-cache-dir wheel && \
-    python3 -m pip install tox devpi-client build && \
+    python3 -m pip install tox "devpi-client<6.0" build && \
     python3 -m build -h
 
 WORKDIR /src
