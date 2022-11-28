@@ -1008,7 +1008,7 @@ pipeline {
                                                     label:'Installing Devpi client',
                                                     script: '''python3 -m venv venv
                                                                 venv/bin/python -m pip install pip --upgrade
-                                                                venv/bin/python -m pip install devpi_client
+                                                                venv/bin/python -m pip install "devpi-client<6.0"
                                                                 '''
                                                 )
                                             },
@@ -1041,8 +1041,9 @@ pipeline {
                                                 sh(
                                                     label:'Installing Devpi client',
                                                     script: '''python3 -m venv venv
-                                                                venv/bin/python -m pip install pip --upgrade
-                                                                venv/bin/python -m pip install devpi_client
+                                                                . ./venv/bin/activate
+                                                                python -m pip install pip tox --upgrade
+                                                                python -m pip install "devpi-client<6.0"
                                                                 '''
                                                 )
                                             },
