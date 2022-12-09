@@ -897,7 +897,7 @@ pipeline {
                                                     label:'Install Tox',
                                                     script: '''python3 -m venv venv
                                                                venv/bin/pip install pip --upgrade
-                                                               venv/bin/pip install tox
+                                                               venv/bin/pip install -r requirements/requirements_tox.txt
                                                                '''
                                                 )
                                             },
@@ -924,7 +924,7 @@ pipeline {
                                                     label:'Install Tox',
                                                     script: '''python3 -m venv venv
                                                                venv/bin/pip install pip --upgrade
-                                                               venv/bin/pip install tox
+                                                               venv/bin/pip install -r requirements/requirements_tox.txt
                                                                '''
                                                 )
                                             },
@@ -1061,11 +1061,13 @@ pipeline {
                                         ],
                                         test:[
                                             setup: {
+                                                checkout scm
+                                                checkout scm
                                                 sh(
                                                     label:'Installing Devpi client',
                                                     script: '''python3 -m venv venv
                                                                 . ./venv/bin/activate
-                                                                python -m pip install pip tox --upgrade
+                                                                python -m pip install pip -r requirements/requirements_tox.txt --upgrade
                                                                 python -m pip install "devpi-client<6.0"
                                                                 '''
                                                 )

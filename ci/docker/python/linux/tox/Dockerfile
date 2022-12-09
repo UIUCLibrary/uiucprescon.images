@@ -16,6 +16,7 @@ FROM wheel_builder_base as wheel_builder_py37
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 COPY requirements.txt ci/docker/shared/requirements-ci.txt ci/docker/shared/requirements-extra.txt  /tmp/
+COPY requirements /tmp/requirements
 ENV PYTHON=python3.7
 RUN $PYTHON -m pip install pip --upgrade pip && \
     $PYTHON -m pip install wheel && \
@@ -31,6 +32,7 @@ ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 
 COPY requirements.txt ci/docker/shared/requirements-ci.txt ci/docker/shared/requirements-extra.txt  /tmp/
+COPY requirements /tmp/requirements
 ENV PYTHON=python3.8
 RUN $PYTHON -m pip install pip --upgrade pip && \
     $PYTHON -m pip install wheel && \
@@ -46,6 +48,7 @@ ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 
 COPY requirements.txt ci/docker/shared/requirements-ci.txt ci/docker/shared/requirements-extra.txt  /tmp/
+COPY requirements /tmp/requirements
 ENV PYTHON=python3.9
 RUN $PYTHON -m pip install pip --upgrade pip && \
     $PYTHON -m pip install wheel && \
@@ -61,6 +64,7 @@ ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 
 COPY requirements.txt ci/docker/shared/requirements-ci.txt ci/docker/shared/requirements-extra.txt  /tmp/
+COPY requirements /tmp/requirements
 ENV PYTHON=python3.10
 RUN $PYTHON -m ensurepip --upgrade && \
     $PYTHON -m pip install pip --upgrade pip && \
@@ -92,10 +96,11 @@ RUN python3.10 -m ensurepip --upgrade && \
 
 RUN chmod -R 777 /wheels
 ENV PIP_FIND_LINKS=/wheels
+COPY requirements /tmp/requirements
 RUN python3 -m pip install --upgrade pip && \
     python3 -m pip install wheel && \
     python3 -m pip wheel -w /wheels --no-cache-dir wheel && \
-    python3 -m pip install tox "devpi-client<6.0" build && \
+    python3 -m pip install -r /tmp/requirements/requirements_tox.txt "devpi-client<6.0" build && \
     python3 -m build -h
 
 WORKDIR /src

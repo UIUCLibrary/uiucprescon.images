@@ -7,6 +7,7 @@ ARG PIP_TRUSTED_HOST
 ENV PIP_NO_CACHE_DIR=1
 
 ADD requirements.txt ci/docker/shared/requirements-ci.txt ci/docker/shared/requirements-extra.txt /tmp/
+COPY requirements/ /tmp/requirements/
 RUN python -m pip install --upgrade pip &&  \
     pip install wheel && \
     pip install setuptools --upgrade && \
@@ -47,6 +48,7 @@ ENV PIP_FIND_LINKS=/wheels
 ENV PIP_NO_CACHE_DIR=1
 COPY --from=wheel_builder /wheels /wheels/
 ADD requirements.txt ci/docker/shared/requirements-ci.txt /tmp/
+COPY requirements/ /tmp/requirements/
 RUN pip install --no-index --find-links=/wheels \
     -r /tmp/requirements.txt \
     -r /tmp/requirements-ci.txt

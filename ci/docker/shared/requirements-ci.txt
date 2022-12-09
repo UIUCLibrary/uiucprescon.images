@@ -8,5 +8,5 @@ mypy
 paramiko
 pylint
 pydocstyle
-tox
+-r requirements/requirements_tox.txt
 twine
