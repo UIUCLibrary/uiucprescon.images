@@ -760,35 +760,40 @@ pipeline {
                 beforeAgent true
             }
             stages{
-                stage("Building Wheel and sdist"){
+                stage('Building Source and Wheel formats'){
                     agent {
-                        dockerfile {
-                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                            label 'linux && docker && x86'
-                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                        }
+                        docker{
+                            image 'python'
+                            label 'linux && docker'
+                          }
                     }
                     steps{
-                        sh(
-                            label: "Build Python packages",
-                            script: "python -m build ."
-                        )
+                        timeout(5){
+                            withEnv(['PIP_NO_CACHE_DIR=off']) {
+                                sh(label: 'Build Python Package',
+                                   script: '''python -m venv venv --upgrade-deps
+                                              . ./venv/bin/activate
+                                              pip install build
+                                              python -m build .
+                                              '''
+                                    )
+                            }
+                        }
                     }
-                    post {
-                        success {
+                    post{
+                        success{
                             archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
                             stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
                             stash includes: "dist/*.whl", name: 'wheel'
                             stash includes: "dist/*.tar.gz,dist/*.zip", name: 'sdist'
-
                         }
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
                                 patterns: [
-                                    [pattern: 'dist/', type: 'INCLUDE'],
-                                    [pattern: 'build/', type: 'INCLUDE'],
-                                    [pattern: "uiucprescon.images.egg-info/", type: 'INCLUDE'],
+                                    [pattern: '**/__pycache__/', type: 'INCLUDE'],
+                                    [pattern: 'venv/', type: 'INCLUDE'],
+                                    [pattern: 'dist/', type: 'INCLUDE']
                                 ]
                             )
                         }
