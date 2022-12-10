@@ -1,18 +1,21 @@
 #!groovy
-def getDevPiStagingIndex(){
 
-    if (env.TAG_NAME?.trim()){
-        return 'tag_staging'
-    } else{
-        return "${env.BRANCH_NAME}_staging"
+def getDevpiConfig() {
+    node(){
+        configFileProvider([configFile(fileId: 'devpi_config', variable: 'CONFIG_FILE')]) {
+            def configProperties = readProperties(file: CONFIG_FILE)
+            configProperties.stagingIndex = {
+                if (env.TAG_NAME?.trim()){
+                    return 'tag_staging'
+                } else{
+                    return "${env.BRANCH_NAME}_staging"
+                }
+            }()
+            return configProperties
+        }
     }
 }
-
-def DEVPI_CONFIG = [
-    stagingIndex: getDevPiStagingIndex(),
-    server: 'https://devpi.library.illinois.edu',
-    credentialsId: 'DS_devpi',
-]
+def DEVPI_CONFIG = getDevpiConfig()
 
 SONARQUBE_CREDENTIAL_ID = 'sonarcloud-uiucprescon.images'
 SUPPORTED_MAC_VERSIONS = ['3.8', '3.9', '3.10']
@@ -24,165 +27,6 @@ PYPI_SERVERS = [
     'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python/',
     'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_testing/'
     ]
-
-
-CONFIGURATIONS = [
-    "3.7" : [
-        os: [
-            windows: [
-                agents: [
-                    build: [
-                        dockerfile: [
-                            filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
-                            label: 'Windows&&Docker',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
-                        ]
-                    ],
-                    test: [
-                        dockerfile: [
-                            filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
-                            label: 'Windows&&Docker',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
-                        ]
-                    ],
-                    devpi: [
-                        dockerfile: [
-                            filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
-                            label: 'windows && docker',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
-                        ]
-                    ]
-                ],
-                pkgRegex: [
-                    wheel: "*.whl",
-                    sdist: "*.zip"
-                ]
-            ],
-            linux: [
-                agents: [
-                    build: [
-                        dockerfile: [
-                            filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                            label: 'linux&&docker',
-                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                        ]
-                    ],
-                    test: [
-                        dockerfile: [
-                            filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                            label: 'linux&&docker',
-                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                        ]
-                    ],
-                    devpi: [
-                        dockerfile: [
-                            filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                            label: 'linux&&docker',
-                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                        ]
-                    ]
-                ],
-                pkgRegex: [
-                    wheel: "*.whl",
-                    sdist: "*.zip"
-                ]
-            ]
-        ],
-        tox_env: "py37",
-        devpiSelector: [
-            sdist: "zip",
-            wheel: "whl",
-        ],
-        pkgRegex: [
-            wheel: "*.whl",
-            sdist: "*.zip"
-        ]
-    ],
-    "3.8" : [
-        os: [
-            windows: [
-                agents: [
-                    build: [
-                        dockerfile: [
-                            filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
-                            label: 'Windows&&Docker',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
-                        ]
-                    ],
-                    test: [
-                        dockerfile: [
-                            filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
-                            label: 'windows && docker',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
-                        ]
-                    ],
-                    devpi: [
-                        dockerfile: [
-                            filename: 'ci/docker/python/windows/build/msvc/Dockerfile',
-                            label: 'windows && docker',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
-                        ]
-                    ]
-
-                ],
-                pkgRegex: [
-                    wheel: "*.whl",
-                    sdist: "*.zip"
-                ]
-            ],
-            linux: [
-                agents: [
-                    build: [
-                        dockerfile: [
-                            filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                            label: 'linux&&docker',
-                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                        ]
-                    ],
-                    test: [
-                        dockerfile: [
-                            filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                            label: 'linux&&docker',
-                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                        ]
-                    ],
-                    devpi: [
-                        dockerfile: [
-                            filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                            label: 'linux&&docker',
-                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                        ]
-                    ]
-                ],
-                pkgRegex: [
-                    wheel: "*.whl",
-                    sdist: "*.zip"
-                ]
-            ]
-        ],
-        tox_env: "py38",
-        devpiSelector: [
-            sdist: "zip",
-            wheel: "whl",
-        ],
-        pkgRegex: [
-            wheel: "*.whl",
-            sdist: "*.zip"
-        ]
-    ],
-]
-def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUsername, devpiPassword){
-    script {
-            try {
-                bat "${devpiExecutable} login ${devpiUsername} --password ${devpiPassword}"
-                bat "${devpiExecutable} use ${devpiIndex}"
-                bat "${devpiExecutable} remove -y ${pkgName}==${pkgVersion}"
-            } catch (Exception ex) {
-                echo "Failed to remove ${pkgName}==${pkgVersion} from ${devpiIndex}"
-        }
-
-    }
-}
 
 def parseBanditReport(htmlReport){
     script {
@@ -208,59 +52,6 @@ def get_sonarqube_unresolved_issues(report_task_file){
     }
 }
 
-def get_sonarqube_scan_data(report_task_file){
-    script{
-        if (! fileExists(report_task_file)){
-            error "File not found ${report_task_file}"
-        }
-        def props = readProperties  file: report_task_file
-
-        def ceTaskUrl= props['ceTaskUrl']
-        def response = httpRequest ceTaskUrl
-        def ceTask = readJSON text: response.content
-        def analysisId = ceTask["task"]["analysisId"]
-         if(analysisId == null){
-            error "Unable to parse analysisId from ${report_task_file}"
-        }
-
-        def response2 = httpRequest url : props['serverUrl'] + "/api/qualitygates/project_status?analysisId=" + analysisId
-        def qualitygate =  readJSON text: response2.content
-        return qualitygate
-    }
-}
-
-def get_sonarqube_project_analysis(report_task_file, buildString){
-    if (! fileExists(report_task_file)){
-            error "File not found ${report_task_file}"
-        }
-    def props = readProperties  file: report_task_file
-
-    def response = httpRequest url : props['serverUrl'] + "/api/project_analyses/search?project=" + props['projectKey']
-    def project_analyses = readJSON text: response.content
-
-    for( analysis in project_analyses['analyses']){
-        if(!analysis.containsKey("buildString")){
-            continue
-        }
-        def build_string = analysis["buildString"]
-        if(build_string != buildString){
-            continue
-        }
-        return analysis
-    }
-}
-
-
-def get_package_version(stashName, metadataFile){
-    ws {
-        unstash "${stashName}"
-        script{
-            def props = readProperties interpolate: true, file: "${metadataFile}"
-            deleteDir()
-            return props.Version
-        }
-    }
-}
 
 defaultParameterValues = [
     USE_SONARQUBE: false
