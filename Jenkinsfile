@@ -677,6 +677,7 @@ pipeline {
                                             agent: [
                                                 label: "mac && python${pythonVersion}",
                                             ],
+                                            retryTimes: 3,
                                             glob: 'dist/*.tar.gz,dist/*.zip',
                                             stash: 'PYTHON_PACKAGES',
                                             pythonVersion: pythonVersion,
@@ -704,6 +705,7 @@ pipeline {
                                             agent: [
                                                 label: "mac && python${pythonVersion}",
                                             ],
+                                            retryTimes: 3,
                                             glob: 'dist/*.whl',
                                             stash: 'PYTHON_PACKAGES',
                                             pythonVersion: pythonVersion,
