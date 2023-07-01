@@ -34,12 +34,11 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe sources ; `
     }; `
     Write-Host "Finished install packages with Chocolatey"
 
-ARG PYTHON_37_VERSION=3.7.9
 ARG PYTHON_38_VERSION=3.8.10
 ARG PYTHON_39_VERSION=3.9.13
 ARG PYTHON_310_VERSION=3.10.4
 
-RUN $PYTHON_VERSIONS = @(${Env:PYTHON_37_VERSION}, ${Env:PYTHON_38_VERSION}, ${Env:PYTHON_39_VERSION}, ${Env:PYTHON_310_VERSION}) ; `
+RUN $PYTHON_VERSIONS = @(${Env:PYTHON_38_VERSION}, ${Env:PYTHON_39_VERSION}, ${Env:PYTHON_310_VERSION}) ; `
     foreach( $PYTHON_VERSION in $PYTHON_VERSIONS ){ `
         Write-Host "Installing Python $PYTHON_VERSION with Chocolatey" ; `
         $process = start-process -NoNewWindow -PassThru -FilePath C:\ProgramData\chocolatey\bin\choco.exe -ArgumentList 'install -y --stoponfirstfailure --no-progress --verbose python3', "--version=$PYTHON_VERSION", "-my" -Wait ;`
@@ -53,7 +52,6 @@ RUN $PYTHON_VERSIONS = @(${Env:PYTHON_37_VERSION}, ${Env:PYTHON_38_VERSION}, ${E
     Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse ; `
     Remove-Item -Force -Recurse ${Env:TEMP}\* ; `
     py --list ;`
-    py -3.7 --version ; `
     py -3.8 --version ; `
     py -3.9 --version ; `
     py -3.10 --version ; `
@@ -65,21 +63,6 @@ RUN certutil -addstore -f root roots.sst ; `
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 
-# ==============================================================================
-FROM CHOCOLATEY_BASE as WHEEL_BUILDER_PY37
-SHELL ["cmd", "/S", "/C" ]
-COPY requirements.txt ci/docker/shared/requirements-ci.txt ci/docker/shared/requirements-extra.txt c:/requirements/
-COPY requirements c:/requirements/requirements
-ARG PIP_EXTRA_INDEX_URL
-ARG PIP_INDEX_URL
-ENV PY_PYTHON=3.7
-ENV PIP_NO_CACHE_DIR=off
-RUN py -m pip install --upgrade pip && `
-    py -m pip install wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir `
-        -r c:/requirements/requirements.txt `
-        -r c:/requirements/requirements-ci.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-extra.txt
 
 # ==============================================================================
 FROM CHOCOLATEY_BASE as WHEEL_BUILDER_PY38
@@ -131,9 +114,6 @@ RUN py -m pip install --upgrade pip && `
 
 # ==============================================================================
 FROM CHOCOLATEY_BASE
-
-COPY --from=WHEEL_BUILDER_PY37 C:/wheels/ c:/wheels/
-RUN py -3.7 -m pip install pip --upgrade
 
 COPY --from=WHEEL_BUILDER_PY38 C:/wheels/ c:/wheels/
 RUN py -3.8 -m pip install pip --upgrade
