@@ -34,29 +34,16 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe sources ; `
     }; `
     Write-Host "Finished install packages with Chocolatey"
 
-ARG PYTHON_37_VERSION=3.7.9
-ARG PYTHON_38_VERSION=3.8.10
-ARG PYTHON_39_VERSION=3.9.13
-ARG PYTHON_310_VERSION=3.10.4
-
-RUN $PYTHON_VERSIONS = @(${Env:PYTHON_37_VERSION}, ${Env:PYTHON_38_VERSION}, ${Env:PYTHON_39_VERSION}, ${Env:PYTHON_310_VERSION}) ; `
-    foreach( $PYTHON_VERSION in $PYTHON_VERSIONS ){ `
-        Write-Host "Installing Python $PYTHON_VERSION with Chocolatey" ; `
-        $process = start-process -NoNewWindow -PassThru -FilePath C:\ProgramData\chocolatey\bin\choco.exe -ArgumentList 'install -y --stoponfirstfailure --no-progress --verbose python3', "--version=$PYTHON_VERSION", "-my" -Wait ;`
-        if ( $process.ExitCode -eq 0) `
-        { `
-            Write-Host "Installing Python $PYTHON_VERSION with Chocolatey - Done" ; `
-        } else { `
-            throw "Installing packages with Chocolatey - Failed with exit code ($process.ExitCode)" ;  `
-        };`
-    } ; `
+ADD ci/docker/python/windows/tox/chocolatey/python.xml choco/python.config
+RUN C:\ProgramData\chocolatey\bin\choco.exe install -y --stoponfirstfailure --no-progress --verbose choco/python.config ;`
     Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse ; `
+    refreshenv ; `
     Remove-Item -Force -Recurse ${Env:TEMP}\* ; `
     py --list ;`
-    py -3.7 --version ; `
     py -3.8 --version ; `
     py -3.9 --version ; `
     py -3.10 --version ; `
+    py -3.11 --version ; `
     Write-Host "Installing Python with Chocolatey - Done"
 
 COPY --from=certsgen c:/roots.sst roots.sst
@@ -67,7 +54,9 @@ ARG PIP_INDEX_URL
 RUN py -3.7 -m pip install pip --upgrade ; `
     py -3.8 -m pip install pip --upgrade ; `
     py -3.9 -m pip install pip --upgrade ; `
-    py -3.10 -m pip install pip --upgrade
+    py -3.10 -m pip install pip --upgrade ; `
+    py -3.11 -m pip install pip --upgrade
+
 ARG PIP_DOWNLOAD_CACHE
 RUN New-Item -type directory -path ${Env:PIP_DOWNLOAD_CACHE} -Force
 ENV PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE}
