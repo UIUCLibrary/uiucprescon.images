@@ -21,12 +21,15 @@ SUPPORTED_MAC_VERSIONS = ['3.8', '3.9', '3.10']
 SUPPORTED_LINUX_VERSIONS = ['3.7', '3.8', '3.9', '3.10']
 SUPPORTED_WINDOWS_VERSIONS = ['3.7', '3.8', '3.9', '3.10']
 
-PYPI_SERVERS = [
-    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_public/',
-    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python/',
-    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_testing/'
-    ]
 
+def getPypiConfig() {
+    node(){
+        configFileProvider([configFile(fileId: 'pypi_config', variable: 'CONFIG_FILE')]) {
+            def config = readJSON( file: CONFIG_FILE)
+            return config['deployment']['indexes']
+        }
+    }
+}
 def parseBanditReport(htmlReport){
     script {
         try{
@@ -1089,7 +1092,7 @@ pipeline {
                         message 'Upload to pypi server?'
                         parameters {
                             choice(
-                                choices: PYPI_SERVERS,
+                                choices: getPypiConfig(),
                                 description: 'Url to the pypi index to upload python packages.',
                                 name: 'SERVER_URL'
                             )
