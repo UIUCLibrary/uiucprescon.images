@@ -34,8 +34,10 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe sources ; `
     }; `
     Write-Host "Finished install packages with Chocolatey"
 
+
 ADD ci/docker/python/windows/tox/chocolatey/python.xml choco/python.config
 RUN C:\ProgramData\chocolatey\bin\choco.exe install -y --stoponfirstfailure --no-progress --verbose choco/python.config ;`
+
     Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse ; `
     refreshenv ; `
     Remove-Item -Force -Recurse ${Env:TEMP}\* ; `
@@ -60,6 +62,7 @@ RUN py -3.7 -m pip install pip --upgrade ; `
 ARG PIP_DOWNLOAD_CACHE
 RUN New-Item -type directory -path ${Env:PIP_DOWNLOAD_CACHE} -Force
 ENV PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE}
+
 
 COPY requirements requirements
 RUN python -m pip install pip --upgrade ; `

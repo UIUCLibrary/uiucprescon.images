@@ -17,6 +17,7 @@ def getDevpiConfig() {
 }
 def DEVPI_CONFIG = getDevpiConfig()
 
+
 SUPPORTED_MAC_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
 SUPPORTED_LINUX_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
 SUPPORTED_WINDOWS_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
@@ -502,11 +503,13 @@ pipeline {
                     }
                     steps {
                         script{
-                            def tox
-                            node(){
-                                checkout scm
-                                tox = load("ci/jenkins/scripts/tox.groovy")
-                            }
+                            def tox = fileLoader.fromGit(
+                                'tox',
+                                'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
+                                '8',
+                                null,
+                                ''
+                                )
                             def windowsJobs = [:]
                             def linuxJobs = [:]
                             stage("Scanning Tox Environments"){
@@ -516,7 +519,8 @@ pipeline {
                                                 envNamePrefix: "Tox Linux",
                                                 label: "linux && docker && x86",
                                                 dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                retry: 2
                                             )
                                     },
                                     "Windows":{
@@ -524,7 +528,8 @@ pipeline {
                                                 envNamePrefix: "Tox Windows",
                                                 label: "windows && docker && x86",
                                                 dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
+                                                retry: 2
                                          )
                                     },
                                     failFast: true
