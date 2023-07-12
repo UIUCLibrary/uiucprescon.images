@@ -1,5 +1,5 @@
 # escape=`
-
+ARG PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip
 ARG FROM_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:4.8
 FROM ${FROM_IMAGE} as certsgen
 RUN certutil -generateSSTFromWU roots.sst
@@ -34,27 +34,18 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe sources ; `
     }; `
     Write-Host "Finished install packages with Chocolatey"
 
-ARG PYTHON_38_VERSION=3.8.10
-ARG PYTHON_39_VERSION=3.9.13
-ARG PYTHON_310_VERSION=3.10.4
 
-RUN $PYTHON_VERSIONS = @(${Env:PYTHON_38_VERSION}, ${Env:PYTHON_39_VERSION}, ${Env:PYTHON_310_VERSION}) ; `
-    foreach( $PYTHON_VERSION in $PYTHON_VERSIONS ){ `
-        Write-Host "Installing Python $PYTHON_VERSION with Chocolatey" ; `
-        $process = start-process -NoNewWindow -PassThru -FilePath C:\ProgramData\chocolatey\bin\choco.exe -ArgumentList 'install -y --stoponfirstfailure --no-progress --verbose python3', "--version=$PYTHON_VERSION", "-my" -Wait ;`
-        if ( $process.ExitCode -eq 0) `
-        { `
-            Write-Host "Installing Python $PYTHON_VERSION with Chocolatey - Done" ; `
-        } else { `
-            throw "Installing packages with Chocolatey - Failed with exit code ($process.ExitCode)" ;  `
-        };`
-    } ; `
+ADD ci/docker/python/windows/tox/chocolatey/python.xml choco/python.config
+RUN C:\ProgramData\chocolatey\bin\choco.exe install -y --stoponfirstfailure --no-progress --verbose choco/python.config ;`
+
     Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse ; `
+    refreshenv ; `
     Remove-Item -Force -Recurse ${Env:TEMP}\* ; `
     py --list ;`
     py -3.8 --version ; `
     py -3.9 --version ; `
     py -3.10 --version ; `
+    py -3.11 --version ; `
     Write-Host "Installing Python with Chocolatey - Done"
 
 COPY --from=certsgen c:/roots.sst roots.sst
@@ -62,73 +53,21 @@ RUN certutil -addstore -f root roots.sst ; `
     del roots.sst
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
+RUN py -3.7 -m pip install pip --upgrade ; `
+    py -3.8 -m pip install pip --upgrade ; `
+    py -3.9 -m pip install pip --upgrade ; `
+    py -3.10 -m pip install pip --upgrade ; `
+    py -3.11 -m pip install pip --upgrade
 
+ARG PIP_DOWNLOAD_CACHE
+RUN New-Item -type directory -path ${Env:PIP_DOWNLOAD_CACHE} -Force
+ENV PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE}
 
-# ==============================================================================
-FROM CHOCOLATEY_BASE as WHEEL_BUILDER_PY38
-SHELL ["cmd", "/S", "/C" ]
-COPY requirements.txt ci/docker/shared/requirements-ci.txt ci/docker/shared/requirements-extra.txt c:/requirements/
-COPY requirements c:/requirements/requirements
-ARG PIP_EXTRA_INDEX_URL
-ARG PIP_INDEX_URL
-ENV PY_PYTHON=3.8
-ENV PIP_NO_CACHE_DIR=off
-RUN py -m pip install --upgrade pip && `
-    py -m pip install wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir `
-        -r c:/requirements/requirements.txt `
-        -r c:/requirements/requirements-ci.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-extra.txt
-
-# ==============================================================================
-FROM CHOCOLATEY_BASE as WHEEL_BUILDER_PY39
-SHELL ["cmd", "/S", "/C" ]
-COPY requirements.txt ci/docker/shared/requirements-ci.txt ci/docker/shared/requirements-extra.txt c:/requirements/
-COPY requirements c:/requirements/requirements
-ARG PIP_EXTRA_INDEX_URL
-ARG PIP_INDEX_URL
-ENV PY_PYTHON=3.9
-ENV PIP_NO_CACHE_DIR=off
-RUN py -m pip install --upgrade pip && `
-    py -m pip install wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir `
-        -r c:/requirements/requirements.txt `
-        -r c:/requirements/requirements-ci.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-extra.txt
-
-# ==============================================================================
-FROM CHOCOLATEY_BASE as WHEEL_BUILDER_PY310
-SHELL ["cmd", "/S", "/C" ]
-COPY requirements.txt ci/docker/shared/requirements-ci.txt ci/docker/shared/requirements-extra.txt c:/requirements/
-COPY requirements c:/requirements/requirements
-ARG PIP_EXTRA_INDEX_URL
-ARG PIP_INDEX_URL
-ENV PY_PYTHON=3.10
-ENV PIP_NO_CACHE_DIR=off
-RUN py -m pip install --upgrade pip && `
-    py -m pip install wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir `
-        -r c:/requirements/requirements.txt `
-        -r c:/requirements/requirements-ci.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-extra.txt
-
-# ==============================================================================
-FROM CHOCOLATEY_BASE
-
-COPY --from=WHEEL_BUILDER_PY38 C:/wheels/ c:/wheels/
-RUN py -3.8 -m pip install pip --upgrade
-
-COPY --from=WHEEL_BUILDER_PY39 C:/wheels/ c:/wheels/
-RUN py -3.9 -m pip install pip --upgrade
-
-COPY --from=WHEEL_BUILDER_PY310 C:/wheels/ c:/wheels/
-RUN py -3.10 -m pip install pip --upgrade
 
 COPY requirements requirements
 RUN python -m pip install pip --upgrade ; `
     python -m pip install wheel ; `
     python -m pip wheel -w c:\wheels\ --no-cache-dir wheel ; `
-    python -m pip install pip install -r requirements/requirements_tox.txt "devpi-client<6.0"
-ENV PIP_FIND_LINKS=c:\wheels
+    python -m pip install pip install -r requirements/requirements_tox.txt devpi-client
 WORKDIR C:/src
 CMD tox --workdir ${Env:TEMP}\tox\ -vv  --recreate

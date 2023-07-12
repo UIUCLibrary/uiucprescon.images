@@ -17,17 +17,20 @@ def getDevpiConfig() {
 }
 def DEVPI_CONFIG = getDevpiConfig()
 
-SONARQUBE_CREDENTIAL_ID = 'sonarcloud-uiucprescon.images'
-SUPPORTED_MAC_VERSIONS = ['3.8', '3.9', '3.10']
-SUPPORTED_LINUX_VERSIONS = ['3.8', '3.9', '3.10']
-SUPPORTED_WINDOWS_VERSIONS = ['3.8', '3.9', '3.10']
 
-PYPI_SERVERS = [
-    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_public/',
-    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python/',
-    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_testing/'
-    ]
+SUPPORTED_MAC_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
+SUPPORTED_LINUX_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
+SUPPORTED_WINDOWS_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
 
+
+def getPypiConfig() {
+    node(){
+        configFileProvider([configFile(fileId: 'pypi_config', variable: 'CONFIG_FILE')]) {
+            def config = readJSON( file: CONFIG_FILE)
+            return config['deployment']['indexes']
+        }
+    }
+}
 def parseBanditReport(htmlReport){
     script {
         try{
@@ -53,28 +56,10 @@ def get_sonarqube_unresolved_issues(report_task_file){
 }
 
 
-defaultParameterValues = [
-    USE_SONARQUBE: false
-]
-
 def startup(){
     parallel(
         [
             failFast: true,
-            'Checking Sonarqube Settings': {
-                def SONARQUBE_CREDENTIAL_ID = SONARQUBE_CREDENTIAL_ID
-                node(){
-                    try{
-                        withCredentials([string(credentialsId: SONARQUBE_CREDENTIAL_ID, variable: 'dddd')]) {
-                            echo 'Found credentials for sonarqube'
-                        }
-                        defaultParameterValues.USE_SONARQUBE = true
-                    } catch(e){
-                        echo "Setting defaultValue for USE_SONARQUBE to false. Reason: ${e}"
-                        defaultParameterValues.USE_SONARQUBE = false
-                    }
-                }
-            },
             'Getting Distribution Info': {
                 node('linux && docker') {
                     try{
@@ -152,7 +137,8 @@ pipeline {
     parameters {
         booleanParam(name: "RUN_CHECKS", defaultValue: true, description: "Run checks on code")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
-        booleanParam(name: "USE_SONARQUBE", defaultValue: defaultParameterValues.USE_SONARQUBE, description: "Send data test data to SonarQube")
+        booleanParam(name: "USE_SONARQUBE", defaultValue: true, description: "Send data test data to SonarQube")
+        credentials(name: 'SONARCLOUD_TOKEN', credentialType: 'org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl', defaultValue: 'sonarcloud_token', required: false)
         booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Python packages")
         booleanParam(name: 'TEST_PACKAGES', defaultValue: true, description: 'Test Python packages')
         booleanParam(name: 'BUILD_MAC_PACKAGES', defaultValue: false, description: 'Test Python packages on Mac')
@@ -436,9 +422,19 @@ pipeline {
                                         retry(3)
                                     }
                                     when{
-                                        equals expected: true, actual: params.USE_SONARQUBE
-                                        beforeAgent true
-                                        beforeOptions true
+                                        allOf{
+                                            equals expected: true, actual: params.USE_SONARQUBE
+                                            expression{
+                                                try{
+                                                    withCredentials([string(credentialsId: params.SONARCLOUD_TOKEN, variable: 'dddd')]) {
+                                                        echo 'Found credentials for sonarqube'
+                                                    }
+                                                } catch(e){
+                                                    return false
+                                                }
+                                                return true
+                                            }
+                                        }
                                     }
                                     steps{
                                         unstash "COVERAGE_REPORT"
@@ -447,7 +443,7 @@ pipeline {
                                         unstash "PYLINT_REPORT"
                                         unstash "FLAKE8_REPORT"
                                         script{
-                                            withSonarQubeEnv(installationName:"sonarcloud", credentialsId: 'sonarcloud-uiucprescon.images') {
+                                            withSonarQubeEnv(installationName:"sonarcloud", credentialsId: params.SONARCLOUD_TOKEN) {
                                                 if (env.CHANGE_ID){
                                                     sh(
                                                         label: "Running Sonar Scanner",
@@ -1101,7 +1097,7 @@ pipeline {
                         message 'Upload to pypi server?'
                         parameters {
                             choice(
-                                choices: PYPI_SERVERS,
+                                choices: getPypiConfig(),
                                 description: 'Url to the pypi index to upload python packages.',
                                 name: 'SERVER_URL'
                             )
