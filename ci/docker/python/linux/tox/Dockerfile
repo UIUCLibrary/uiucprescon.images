@@ -13,8 +13,7 @@ RUN mkdir -p /.cache/pip && \
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 
-RUN python3.7 -m pip install pip --upgrade && \
-    python3.8 -m pip install pip --upgrade && \
+RUN python3.8 -m pip install pip --upgrade && \
     python3.9 -m pip install pip --upgrade && \
     python3.10 -m ensurepip --upgrade && \
     python3.10 -m pip install pip --upgrade
