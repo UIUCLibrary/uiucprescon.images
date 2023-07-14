@@ -1,4 +1,1 @@
-pytest
-pytest-runner
-sphinx
-pykdu_compress>=0.1.7b2
+-r requirements/requirements.txt
