@@ -64,10 +64,9 @@ RUN New-Item -type directory -path ${Env:PIP_DOWNLOAD_CACHE} -Force
 ENV PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE}
 
 
-COPY requirements requirements
-RUN python -m pip install pip --upgrade ; `
-    python -m pip install wheel ; `
-    python -m pip wheel -w c:\wheels\ --no-cache-dir wheel ; `
-    python -m pip install pip install -r requirements/requirements_tox.txt devpi-client
+COPY requirements-ci.txt c:/python_requirments/
+COPY requirements/ c:/python_requirments/requirements
+RUN python -m pip install pip --upgrade ; pip install -r c:/python_requirments/requirements-ci.txt
+
 WORKDIR C:/src
 CMD tox --workdir ${Env:TEMP}\tox\ -vv  --recreate
