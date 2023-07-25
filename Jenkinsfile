@@ -174,6 +174,9 @@ pipeline {
                                     additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                 }
                             }
+                            options {
+                                retry(conditions: [agent()], count: 3)
+                            }
                             steps {
                                 sh(
                                     label: "Building docs",
