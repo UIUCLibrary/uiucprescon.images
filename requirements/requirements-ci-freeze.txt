@@ -80,7 +80,7 @@ sphinxcontrib-serializinghtml==1.1.5
 stevedore==5.1.0
 tomli==2.0.1
 tomlkit==0.11.8
-tox==3.28.0
+tox==4.11.1
 twine==4.0.2
 typing_extensions==4.7.1
 urllib3==2.0.3
