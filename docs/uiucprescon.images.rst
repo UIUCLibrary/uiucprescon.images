@@ -18,4 +18,5 @@ formats
 _______
 .. automodule:: uiucprescon.images.formats
     :members: AbsImageConvert
-
+    :noindex:
+        name
