@@ -68,5 +68,14 @@ COPY requirements-ci.txt c:/python_requirments/
 COPY requirements/ c:/python_requirments/requirements
 RUN python -m pip install pip --upgrade ; pip install -r c:/python_requirments/requirements-ci.txt
 
+ARG PIPX_HOME
+ENV PIPX_HOME=${PIPX_HOME}
+ENV PIPX_BIN_DIR=${PIPX_HOME}\bin
+
+
+RUN py -3 -m pip install --no-cache-dir pipx ; `
+    py -3 -m pipx ensurepath
+RUN py -3 -m pipx install 'devpi-client<7.0'
+
 WORKDIR C:/src
 CMD tox --workdir ${Env:TEMP}\tox\ -vv  --recreate
