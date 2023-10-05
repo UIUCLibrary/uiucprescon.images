@@ -16,7 +16,7 @@ ARG PIP_FIND_LINKS
 RUN mkdir -p ${PIP_FIND_LINKS} &&  \
     pip wheel --wheel-dir=${PIP_FIND_LINKS} --no-cache-dir -r /requirements/requirements-ci.txt
 
-FROM base_image as SONAR_BUILDER
+FROM base_image AS SONAR_BUILDER
 RUN apt-get update && \
     apt-get install -y unzip
 ENV SONAR_SCANNER_VERSION=4.4.0.2170

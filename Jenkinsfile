@@ -805,75 +805,79 @@ pipeline {
                             def macPackages = [:]
                             SUPPORTED_MAC_VERSIONS.each{pythonVersion ->
                                 macPackages["MacOS - Python ${pythonVersion}: wheel"] = {
-                                    devpi.testDevpiPackage(
-                                        agent: [
-                                            label: "mac && python${pythonVersion} && devpi-access"
-                                        ],
-                                        devpi: [
-                                            index: DEVPI_CONFIG.stagingIndex,
-                                            server: DEVPI_CONFIG.server,
-                                            credentialsId: DEVPI_CONFIG.credentialsId,
-                                            devpiExec: 'venv/bin/devpi'
-                                        ],
-                                        retryTimes: 3,
-                                        package:[
-                                            name: props.Name,
-                                            version: props.Version,
-                                            selector: 'whl'
-                                        ],
-                                        test:[
-                                            setup: {
-                                                sh(
-                                                    label:'Installing Devpi client',
-                                                    script: '''python3 -m venv venv
-                                                                venv/bin/python -m pip install pip --upgrade
-                                                                venv/bin/python -m pip install "devpi-client<6.0"
-                                                                '''
-                                                )
-                                            },
-                                            toxEnv: "py${pythonVersion}".replace('.',''),
-                                            teardown: {
-                                                sh( label: 'Remove Devpi client', script: 'rm -r venv')
-                                            }
-                                        ]
-                                    )
+                                    withEnv(['PATH+EXTRA=./venv/bin']) {
+                                        devpi.testDevpiPackage(
+                                            agent: [
+                                                label: "mac && python${pythonVersion} && devpi-access"
+                                            ],
+                                            devpi: [
+                                                index: DEVPI_CONFIG.stagingIndex,
+                                                server: DEVPI_CONFIG.server,
+                                                credentialsId: DEVPI_CONFIG.credentialsId,
+                                                devpiExec: 'venv/bin/devpi'
+                                            ],
+                                            retryTimes: 3,
+                                            package:[
+                                                name: props.Name,
+                                                version: props.Version,
+                                                selector: 'whl'
+                                            ],
+                                            test:[
+                                                setup: {
+                                                    sh(
+                                                        label:'Installing Devpi client',
+                                                        script: '''python3 -m venv venv
+                                                                    venv/bin/python -m pip install pip --upgrade
+                                                                    venv/bin/python -m pip install -r requirements/requirements_tox.txt 'devpi-client<7.0'
+                                                                    '''
+                                                    )
+                                                },
+                                                toxEnv: "py${pythonVersion}".replace('.',''),
+                                                teardown: {
+                                                    sh( label: 'Remove Devpi client', script: 'rm -r venv')
+                                                }
+                                            ]
+                                        )
+                                    }
                                 }
                                 macPackages["MacOS - Python ${pythonVersion}: sdist"]= {
-                                    devpi.testDevpiPackage(
-                                        agent: [
-                                            label: "mac && python${pythonVersion} && devpi-access"
-                                        ],
-                                        devpi: [
-                                            index: DEVPI_CONFIG.stagingIndex,
-                                            server: DEVPI_CONFIG.server,
-                                            credentialsId: DEVPI_CONFIG.credentialsId,
-                                            devpiExec: 'venv/bin/devpi'
-                                        ],
-                                        retryTimes: 3,
-                                        package:[
-                                            name: props.Name,
-                                            version: props.Version,
-                                            selector: 'tar.gz'
-                                        ],
-                                        test:[
-                                            setup: {
-                                                checkout scm
-                                                checkout scm
-                                                sh(
-                                                    label:'Installing Devpi client',
-                                                    script: '''python3 -m venv venv
-                                                                . ./venv/bin/activate
-                                                                python -m pip install pip -r requirements/requirements_tox.txt --upgrade
-                                                                python -m pip install "devpi-client<6.0"
-                                                                '''
-                                                )
-                                            },
-                                            toxEnv: "py${pythonVersion}".replace('.',''),
-                                            teardown: {
-                                                sh( label: 'Remove Devpi client', script: 'rm -r venv')
-                                            }
-                                        ]
-                                    )
+                                    withEnv(['PATH+EXTRA=./venv/bin']) {
+                                        devpi.testDevpiPackage(
+                                            agent: [
+                                                label: "mac && python${pythonVersion} && devpi-access"
+                                            ],
+                                            devpi: [
+                                                index: DEVPI_CONFIG.stagingIndex,
+                                                server: DEVPI_CONFIG.server,
+                                                credentialsId: DEVPI_CONFIG.credentialsId,
+                                                devpiExec: 'venv/bin/devpi'
+                                            ],
+                                            retryTimes: 3,
+                                            package:[
+                                                name: props.Name,
+                                                version: props.Version,
+                                                selector: 'tar.gz'
+                                            ],
+                                            test:[
+                                                setup: {
+                                                    checkout scm
+                                                    checkout scm
+                                                    sh(
+                                                        label:'Installing Devpi client',
+                                                        script: '''python3 -m venv venv
+                                                                    . ./venv/bin/activate
+                                                                    python -m pip install pip --upgrade
+                                                                    python -m pip install -r requirements/requirements_tox.txt 'devpi-client<7.0'
+                                                                    '''
+                                                    )
+                                                },
+                                                toxEnv: "py${pythonVersion}".replace('.',''),
+                                                teardown: {
+                                                    sh( label: 'Remove Devpi client', script: 'rm -r venv')
+                                                }
+                                            ]
+                                        )
+                                    }
                                 }
                             }
                             def windowsPackages = [:]

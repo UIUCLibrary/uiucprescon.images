@@ -1,4 +1,4 @@
 pytest
 pytest-runner
-sphinx
+Sphinx
 pykdu_compress>=0.1.7b2
