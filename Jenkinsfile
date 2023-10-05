@@ -178,12 +178,14 @@ pipeline {
                                 }
                             }
                             steps {
-                                sh(
-                                    label: "Building docs",
-                                    script: '''mkdir -p logs
-                                               python -m sphinx docs build/docs/html -d build/docs/.doctrees -w logs/build_sphinx.log
-                                               '''
-                                    )
+                                catchError(buildResult: 'UNSTABLE', message: 'Building documentation produced an error or a warning', stageResult: 'UNSTABLE') {
+                                    sh(
+                                        label: "Building docs",
+                                        script: '''mkdir -p logs
+                                                   python -m sphinx docs build/docs/html -d build/docs/.doctrees -w logs/build_sphinx.log -W --keep-going
+                                                   '''
+                                        )
+                                }
                             }
                             post{
                                 always {
