@@ -1,9 +1,10 @@
 ARG PIP_FIND_LINKS=/wheels
 ARG PYTHON_VERSION=3.11
+ARG SONAR_SCANNER_VERSION=5.0.1.3006
 
-FROM python:${PYTHON_VERSION} as base_image
+FROM python:${PYTHON_VERSION} AS base_image
 
-FROM base_image as wheel_builder
+FROM base_image AS wheel_builder
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 ARG PIP_TRUSTED_HOST
@@ -16,29 +17,35 @@ ARG PIP_FIND_LINKS
 RUN mkdir -p ${PIP_FIND_LINKS} &&  \
     pip wheel --wheel-dir=${PIP_FIND_LINKS} --no-cache-dir -r /requirements/requirements-ci.txt
 
+#==============================================================================
 FROM base_image AS SONAR_BUILDER
 RUN apt-get update && \
-    apt-get install -y unzip
-ENV SONAR_SCANNER_VERSION=4.4.0.2170
+    apt-get install --no-install-recommends -y unzip
+
+ARG SONAR_SCANNER_VERSION
 ARG SONAR_SCANNER_HOME=/opt/sonar/${SONAR_SCANNER_VERSION}-linux
 ENV SONAR_USER_HOME=/opt/sonar/.sonar
 RUN curl --create-dirs -sSLo /tmp/sonar-scanner.zip \
-        https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_SCANNER_VERSION-linux.zip && \
+        https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SONAR_SCANNER_VERSION}-linux.zip && \
     unzip -o /tmp/sonar-scanner.zip -d /opt/sonar/ && \
     rm /tmp/sonar-scanner.zip && \
-    mkdir -p $SONAR_USER_HOME/cache && \
+    mkdir -p ${SONAR_USER_HOME}/cache && \
     chmod -R 777 "${SONAR_USER_HOME}" &&\
-    ln -s /opt/sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux/bin/sonar-scanner /usr/local/bin/sonar-scanner && \
+    ln -s /opt/sonar/sonar-scanner-${SONAR_SCANNER_VERSION}-linux/bin/sonar-scanner /usr/local/bin/sonar-scanner && \
     which sonar-scanner
 
-FROM python:${PYTHON_VERSION}
+
+FROM base_image
 
 COPY --from=SONAR_BUILDER /opt/sonar /opt/sonar/
-ENV SONAR_SCANNER_VERSION=4.4.0.2170
+ARG SONAR_SCANNER_VERSION
+ENV SONAR_SCANNER_VERSION=${SONAR_SCANNER_VERSION}
 ARG SONAR_SCANNER_HOME=/opt/sonar/${SONAR_SCANNER_VERSION}-linux
+ENV SONAR_USER_HOME=/opt/sonar/.sonar
 RUN ln -s /opt/sonar/sonar-scanner-${SONAR_SCANNER_VERSION}-linux/bin/sonar-scanner /usr/local/bin/sonar-scanner && \
     which sonar-scanner
-#RUN mkdir -p /home/user/.sonar/ && chmod -R 777 /home/user/
+RUN mkdir -p /home/user/.sonar/ && chmod -R 777 /home/user/
+
 
 USER root
 ARG PIP_FIND_LINKS
