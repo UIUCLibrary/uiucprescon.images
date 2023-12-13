@@ -1,14 +1,14 @@
 # escape=`
 ARG PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip
 ARG FROM_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:4.8
-FROM ${FROM_IMAGE} as certsgen
+FROM ${FROM_IMAGE} AS certsgen
 RUN certutil -generateSSTFromWU roots.sst
 
-FROM ${FROM_IMAGE} as BASE_BUILDER
+FROM ${FROM_IMAGE} AS BASE_BUILDER
 
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 
-FROM BASE_BUILDER as CHOCOLATEY_BASE
+FROM BASE_BUILDER AS CHOCOLATEY_BASE
 ARG CHOCOLATEY_SOURCE=https://chocolatey.org/api/v2
 ARG ChocolateyEnvironmentDebug=false
 ADD ci/docker/python/windows/tox/chocolatey/install_choco.ps1 choco/install_choco.ps1
@@ -46,6 +46,7 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe install -y --stoponfirstfailure --no
     py -3.9 --version ; `
     py -3.10 --version ; `
     py -3.11 --version ; `
+    py -3.12 --version ; `
     Write-Host "Installing Python with Chocolatey - Done"
 
 COPY --from=certsgen c:/roots.sst roots.sst
@@ -57,7 +58,8 @@ RUN py -3.7 -m pip install pip --upgrade ; `
     py -3.8 -m pip install pip --upgrade ; `
     py -3.9 -m pip install pip --upgrade ; `
     py -3.10 -m pip install pip --upgrade ; `
-    py -3.11 -m pip install pip --upgrade
+    py -3.11 -m pip install pip --upgrade ; `
+    py -3.12 -m pip install pip --upgrade
 
 ARG PIP_DOWNLOAD_CACHE
 RUN New-Item -type directory -path ${Env:PIP_DOWNLOAD_CACHE} -Force
