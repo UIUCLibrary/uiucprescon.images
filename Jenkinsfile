@@ -955,7 +955,7 @@ pipeline {
                                                         credentialsId: DEVPI_CONFIG.credentialsId,
                                                         devpiExec: 'venv/bin/devpi'
                                                     ],
-                                                    retryTimes: 3,
+                                                    retries: 3,
                                                     package:[
                                                         name: props.Name,
                                                         version: props.Version,
@@ -991,7 +991,7 @@ pipeline {
                                                         credentialsId: DEVPI_CONFIG.credentialsId,
                                                         devpiExec: 'venv/bin/devpi'
                                                     ],
-                                                    retryTimes: 3,
+                                                    retries: 3,
                                                     package:[
                                                         name: props.Name,
                                                         version: props.Version,
@@ -1038,7 +1038,7 @@ pipeline {
                                                 server: DEVPI_CONFIG.server,
                                                 credentialsId: DEVPI_CONFIG.credentialsId,
                                             ],
-                                            retryTimes: 3,
+                                            retries: 3,
                                             package:[
                                                 name: props.Name,
                                                 version: props.Version,
@@ -1064,7 +1064,7 @@ pipeline {
                                                 credentialsId: DEVPI_CONFIG.credentialsId,
                                             ],
                                             dockerImageName:  "${currentBuild.fullProjectName}_devpi_without_msvc".replaceAll('-', '_').replaceAll('/', '_').replaceAll(' ', '').toLowerCase(),
-                                            retryTimes: 3,
+                                            retries: 3,
                                             package:[
                                                 name: props.Name,
                                                 version: props.Version,
