@@ -1,4 +1,8 @@
-#!groovy
+library identifier: 'JenkinsPythonHelperLibrary@2024.1.1', retriever: modernSCM(
+  [$class: 'GitSCMSource',
+   remote: 'https://github.com/UIUCLibrary/JenkinsPythonHelperLibrary.git',
+   ])
+
 
 def getDevpiConfig() {
     node(){
@@ -56,16 +60,11 @@ def get_sonarqube_unresolved_issues(report_task_file){
 }
 def testPythonPackages(){
     script{
-        def packages
-        node(){
-            checkout scm
-            packages = load 'ci/jenkins/scripts/packaging.groovy'
-        }
         def windowsTests = [:]
         if(params.INCLUDE_WINDOWS_X86_64 == true){
             SUPPORTED_WINDOWS_VERSIONS.each{ pythonVersion ->
                 windowsTests["Windows - Python ${pythonVersion}: sdist"] = {
-                    packages.testPkg(
+                    testPythonPkg(
                         agent: [
                             dockerfile: [
                                 label: 'windows && docker',
@@ -98,7 +97,7 @@ def testPythonPackages(){
                     )
                 }
                 windowsTests["Windows - Python ${pythonVersion}: wheel"] = {
-                    packages.testPkg(
+                    testPythonPkg(
                         agent: [
                             dockerfile: [
                                 label: 'windows && docker',
@@ -147,7 +146,7 @@ def testPythonPackages(){
             }
             linuxArchitectures.each{arch ->
                 linuxTests["Linux ${arch} - Python ${pythonVersion}: sdist"] = {
-                    packages.testPkg(
+                    testPythonPkg(
                         agent: [
                             dockerfile: [
                                 label: "linux && docker && ${arch}",
@@ -184,7 +183,7 @@ def testPythonPackages(){
                     )
                 }
                 linuxTests["Linux ${arch} - Python ${pythonVersion}: wheel"] = {
-                    packages.testPkg(
+                    testPythonPkg(
                         agent: [
                             dockerfile: [
                                 label: "linux && docker && ${arch}",
@@ -238,7 +237,7 @@ def testPythonPackages(){
             macArchitectures.each{ processorArchitecture ->
                 if (nodesByLabel("mac && ${processorArchitecture} && python${pythonVersion}").size() > 0){
                     macTests["Mac ${processorArchitecture} - Python ${pythonVersion}: sdist"] = {
-                        packages.testPkg(
+                        testPythonPkg(
                             agent: [
                                 label: "mac && python${pythonVersion} && ${processorArchitecture}",
                             ],
@@ -273,7 +272,7 @@ def testPythonPackages(){
                         )
                     }
                     macTests["Mac ${processorArchitecture} - Python ${pythonVersion}: wheel"] = {
-                        packages.testPkg(
+                        testPythonPkg(
                             agent: [
                                 label: "mac && python${pythonVersion} && ${processorArchitecture}",
                             ],
@@ -747,19 +746,12 @@ pipeline {
                     }
                     steps {
                         script{
-                            def tox = fileLoader.fromGit(
-                                'tox',
-                                'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
-                                '8',
-                                null,
-                                ''
-                                )
                             def windowsJobs = [:]
                             def linuxJobs = [:]
                             stage('Scanning Tox Environments'){
                                 parallel(
                                     'Linux':{
-                                        linuxJobs = tox.getToxTestsParallel(
+                                        linuxJobs = getToxTestsParallel(
                                                 envNamePrefix: 'Tox Linux',
                                                 label: 'linux && docker && x86',
                                                 dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
@@ -768,7 +760,7 @@ pipeline {
                                             )
                                     },
                                     'Windows':{
-                                        windowsJobs = tox.getToxTestsParallel(
+                                        windowsJobs = getToxTestsParallel(
                                                 envNamePrefix: 'Tox Windows',
                                                 label: 'windows && docker && x86',
                                                 dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
@@ -1226,20 +1218,11 @@ pipeline {
                     }
                     steps{
                         unstash 'PYTHON_PACKAGES'
-                        script{
-                            def pypi = fileLoader.fromGit(
-                                    'pypi',
-                                    'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
-                                    '2',
-                                    null,
-                                    ''
-                                )
-                            pypi.pypiUpload(
-                                credentialsId: 'jenkins-nexus',
-                                repositoryUrl: SERVER_URL,
-                                glob: 'dist/*'
-                                )
-                        }
+                        pypiUpload(
+                            credentialsId: 'jenkins-nexus',
+                            repositoryUrl: SERVER_URL,
+                            glob: 'dist/*'
+                        )
                     }
                     post{
                         cleanup{
