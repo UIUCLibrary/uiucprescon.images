@@ -516,7 +516,6 @@ pipeline {
                                                     post {
                                                         always {
                                                             junit 'reports/pytest/junit-pytest.xml'
-                                                            stash includes: 'reports/pytest/*.xml', name: 'PYTEST_REPORT'
                                                         }
                                                     }
                                                 }
@@ -568,7 +567,6 @@ pipeline {
                                                         always {
                                                               archiveArtifacts 'logs/flake8.log'
                                                               recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
-                                                              stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
                                                         }
                                                     }
                                                 }
@@ -593,7 +591,6 @@ pipeline {
                                                         always{
                                                             archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/pylint.txt'
                                                             recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
-                                                            stash includes: 'reports/pylint_issues.txt,reports/pylint.txt', name: 'PYLINT_REPORT'
                                                         }
                                                     }
                                                 }
@@ -611,7 +608,6 @@ pipeline {
                                                     post {
                                                         always {
                                                             archiveArtifacts 'reports/bandit-report.json,reports/bandit-report.html'
-                                                            stash( includes: 'reports/bandit-report.json', name: 'BANDIT_REPORT')
                                                         }
                                                         unstable{
                                                             script{
@@ -650,39 +646,10 @@ pipeline {
                                             post{
                                                 always{
                                                     sh 'coverage combine && coverage xml -o reports/coverage.xml'
-                                                    publishCoverage(
-                                                        adapters: [
-                                                            coberturaAdapter('reports/coverage.xml')
-                                                            ],
-                                                        sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
-                                                    )
-                                                    stash( includes: 'reports/coverage.xml', name: 'COVERAGE_REPORT')
+                                                    recordCoverage(tools: [[parser: 'COBERTURA', pattern: 'reports/coverage.xml']])
                                                     archiveArtifacts 'reports/coverage.xml'
                                                 }
-                                                cleanup{
-                                                    cleanWs(
-                                                        patterns: [
-                                                            [pattern: 'build/', type: 'INCLUDE'],
-                                                            [pattern: 'logs/', type: 'INCLUDE'],
-                                                            [pattern: 'reports/', type: 'INCLUDE'],
-                                                            [pattern: 'uiucprescon.images.egg-info/', type: 'INCLUDE'],
-                                                            [pattern: 'reports/pytest/junit-*.xml', type: 'INCLUDE'],
-                                                            [pattern: '.pytest_cache/', type: 'INCLUDE'],
-                                                            [pattern: 'tox/**/*.log', type: 'INCLUDE'],
-                                                            [pattern: '.mypy_cache/', type: 'INCLUDE'],
-                                                        ],
-                                                        deleteDirs: true,
-                                                    )
-                                                }
                                             }
-                                        }
-                                    }
-                                    post{
-                                        cleanup{
-                                            cleanWs(patterns: [
-                                                    [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
-                                                    [pattern: 'reports/coverage', type: 'INCLUDE'],
-                                                ])
                                         }
                                     }
                                 }
@@ -708,11 +675,6 @@ pipeline {
                                         }
                                     }
                                     steps{
-                                        unstash 'COVERAGE_REPORT'
-                                        unstash 'PYTEST_REPORT'
-                                        unstash 'BANDIT_REPORT'
-                                        unstash 'PYLINT_REPORT'
-                                        unstash 'FLAKE8_REPORT'
                                         script{
                                             withSonarQubeEnv(installationName:'sonarcloud', credentialsId: params.SONARCLOUD_TOKEN) {
                                                 if (env.CHANGE_ID){
@@ -745,24 +707,35 @@ pipeline {
                                             )
                                             script{
                                                 if(fileExists('reports/sonar-report.json')){
-                                                    stash includes: 'reports/sonar-report.json', name: 'SONAR_REPORT'
                                                     archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
                                                     recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                                 }
                                             }
                                         }
-                                        cleanup{
-                                            cleanWs(
-                                                deleteDirs: true,
-                                                patterns: [
-                                                    [pattern: '.scannerwork/', type: 'INCLUDE'],
-                                                    [pattern: 'logs/', type: 'INCLUDE'],
-                                                    [pattern: 'reports/', type: 'INCLUDE'],
-                                                    [pattern: 'uiucprescon.images.dist-info/', type: 'INCLUDE'],
-                                                ]
-                                            )
-                                        }
                                     }
+                                }
+                            }
+                            post{
+                                cleanup{
+                                    cleanWs(
+                                        patterns: [
+                                            [pattern: 'dist/', type: 'INCLUDE'],
+                                            [pattern: 'venv/', type: 'INCLUDE'],
+                                            [pattern: '.tox/', type: 'INCLUDE'],
+                                            [pattern: 'build/', type: 'INCLUDE'],
+                                            [pattern: 'coverage-sources.zip', type: 'INCLUDE'],
+                                            [pattern: 'logs/', type: 'INCLUDE'],
+                                            [pattern: 'reports/', type: 'INCLUDE'],
+                                            [pattern: '*.egg-info/', type: 'INCLUDE'],
+                                            [pattern: '.pytest_cache/', type: 'INCLUDE'],
+                                            [pattern: '.scannerwork/', type: 'INCLUDE'],
+                                            [pattern: 'logs/', type: 'INCLUDE'],
+                                            [pattern: 'reports/', type: 'INCLUDE'],
+                                            [pattern: '*.dist-info/', type: 'INCLUDE'],
+                                            [pattern: '.mypy_cache/', type: 'INCLUDE'],
+                                        ],
+                                        deleteDirs: true,
+                                    )
                                 }
                             }
                         }
