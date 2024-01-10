@@ -196,6 +196,7 @@ def testPythonPackages(){
                             checkout scm
                             unstash 'PYTHON_PACKAGES'
                         },
+                        retries: 3,
                         testCommand: {
                             findFiles(glob: 'dist/*.whl').each{
                                 timeout(5){
