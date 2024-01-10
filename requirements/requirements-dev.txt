@@ -8,7 +8,6 @@ paramiko
 pylint
 pydocstyle
 pytest
-pytest-runner
 pykdu_compress>=0.1.7b2
 Sphinx
 twine
