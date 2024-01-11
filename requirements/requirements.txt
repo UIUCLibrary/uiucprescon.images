@@ -1,4 +1,0 @@
-pytest
-pytest-runner
-Sphinx
-pykdu_compress>=0.1.7b2

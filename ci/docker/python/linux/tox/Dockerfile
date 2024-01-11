@@ -21,9 +21,9 @@ RUN python3.8 -m pip install pip --upgrade && \
     python3.11 -m pip install pip --upgrade
 
 COPY requirements/ /tmp/python_requirements/requirements/
-COPY requirements-ci.txt /tmp/python_requirements
+COPY requirements-dev.txt /tmp/python_requirements
 RUN python3 -m pip install --upgrade pip && \
-    python3 -m pip install -r /tmp/python_requirements/requirements-ci.txt
+    python3 -m pip install -r /tmp/python_requirements/requirements-dev.txt
 
 ARG PIP_DOWNLOAD_CACHE
 RUN mkdir -p ${PIP_DOWNLOAD_CACHE} && \

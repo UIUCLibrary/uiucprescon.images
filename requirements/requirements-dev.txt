@@ -7,4 +7,7 @@ mypy
 paramiko
 pylint
 pydocstyle
+pytest
+pykdu_compress>=0.1.7b2
+Sphinx
 twine
