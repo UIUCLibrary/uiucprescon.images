@@ -757,7 +757,7 @@ pipeline {
                                                 label: 'linux && docker && x86',
                                                 dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
                                                 dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                retry: 2
+                                                retry: 3
                                             )
                                     },
                                     'Windows':{
