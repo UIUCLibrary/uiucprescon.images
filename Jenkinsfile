@@ -1054,6 +1054,7 @@ pipeline {
                                                 label: 'linux && docker && x86 && devpi-access'
                                             ]
                                         ],
+                                        retries: 3,
                                         devpi: [
                                             index: DEVPI_CONFIG.stagingIndex,
                                             server: DEVPI_CONFIG.server,
@@ -1078,6 +1079,7 @@ pipeline {
                                                 label: 'linux && docker && x86 && devpi-access'
                                             ]
                                         ],
+                                        retries: 3,
                                         devpi: [
                                             index: DEVPI_CONFIG.stagingIndex,
                                             server: DEVPI_CONFIG.server,
