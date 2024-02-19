@@ -502,6 +502,9 @@ pipeline {
                                     args '--mount source=sonar-cache-uiucprescon-images,target=/home/user/.sonar/cache'
                                 }
                             }
+                            options {
+                              retry(conditions: [agent()], count: 3)
+                            }
                             stages{
                                 stage('Test') {
                                     stages{
