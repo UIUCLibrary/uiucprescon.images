@@ -932,11 +932,12 @@ pipeline {
                                                     ],
                                                     test:[
                                                         setup: {
+                                                            checkout scm
                                                             sh(
                                                                 label:'Installing Devpi client',
                                                                 script: '''python3 -m venv venv
                                                                             venv/bin/python -m pip install pip --upgrade
-                                                                            venv/bin/python -m pip install -r requirements/requirements_tox.txt 'devpi-client<7.0'
+                                                                            venv/bin/python -m pip install -r requirements/requirements_tox.txt 'devpi-client<8.0'
                                                                             '''
                                                             )
                                                         },
@@ -974,7 +975,7 @@ pipeline {
                                                                 script: '''python3 -m venv venv
                                                                             . ./venv/bin/activate
                                                                             python -m pip install pip --upgrade
-                                                                            python -m pip install -r requirements/requirements_tox.txt 'devpi-client<7.0'
+                                                                            python -m pip install -r requirements/requirements_tox.txt 'devpi-client<8.0'
                                                                             '''
                                                             )
                                                         },
