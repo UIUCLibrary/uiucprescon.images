@@ -908,11 +908,11 @@ pipeline {
                                     macArchitectures.add('x86_64')
                                 }
                                 if(params.INCLUDE_MACOS_ARM == true){
-                                    macArchitectures.add('m1')
+                                    macArchitectures.add('arm64')
                                 }
                                 macArchitectures.each{ processorArchitecture ->
                                     if (nodesByLabel("mac && ${processorArchitecture} && python${pythonVersion}").size() > 0){
-                                        macPackages["MacOS - Python ${pythonVersion}: wheel"] = {
+                                        macPackages["MacOS ${processorArchitecture} - Python ${pythonVersion}: wheel"] = {
                                             withEnv(['PATH+EXTRA=./venv/bin']) {
                                                 devpi.testDevpiPackage(
                                                     agent: [
@@ -940,6 +940,25 @@ pipeline {
                                                                             venv/bin/python -m pip install -r requirements/requirements_tox.txt 'devpi-client<8.0'
                                                                             '''
                                                             )
+                                                        },
+                                                        testCommands:{
+                                                            def selector = 'whl'
+                                                            def toxEnv = "py${pythonVersion}".replace('.','')
+                                                            withEnv([
+                                                                    "_DEVPI_INDEX=${DEVPI_CONFIG.stagingIndex}",
+                                                                    "PACKAGE_NAME=${props.Name}",
+                                                                    "PACKAGE_VERSION=${props.Version}",
+                                                                    "TOX_ENV=${toxEnv}",
+                                                                    "TOX_PACKAGE_SELECTOR=${selector}",
+                                                                    ]){
+
+                                                                sh(
+                                                                    label: 'Running tests on Packages on DevPi',
+                                                                    script: '''. ./venv/bin/activate
+                                                                               devpi test --index $_DEVPI_INDEX $PACKAGE_NAME==$PACKAGE_VERSION -s $TOX_PACKAGE_SELECTOR --clientdir './devpi' -e $TOX_ENV -v
+                                                                               '''
+                                                                )
+                                                            }
                                                         },
                                                         toxEnv: "py${pythonVersion}".replace('.',''),
                                                         teardown: {
@@ -978,6 +997,25 @@ pipeline {
                                                                             python -m pip install -r requirements/requirements_tox.txt 'devpi-client<8.0'
                                                                             '''
                                                             )
+                                                        },
+                                                        testCommands:{
+                                                            def selector = 'tar.gz'
+                                                            def toxEnv = "py${pythonVersion}".replace('.','')
+                                                            withEnv([
+                                                                    "_DEVPI_INDEX=${DEVPI_CONFIG.stagingIndex}",
+                                                                    "PACKAGE_NAME=${props.Name}",
+                                                                    "PACKAGE_VERSION=${props.Version}",
+                                                                    "TOX_ENV=${toxEnv}",
+                                                                    "TOX_PACKAGE_SELECTOR=${selector}",
+                                                                    ]){
+
+                                                                sh(
+                                                                    label: 'Running tests on Packages on DevPi',
+                                                                    script: '''. ./venv/bin/activate
+                                                                               devpi test --index $_DEVPI_INDEX $PACKAGE_NAME==$PACKAGE_VERSION -s $TOX_PACKAGE_SELECTOR --clientdir './devpi' -e $TOX_ENV -v
+                                                                               '''
+                                                                )
+                                                            }
                                                         },
                                                         toxEnv: "py${pythonVersion}".replace('.',''),
                                                         teardown: {
