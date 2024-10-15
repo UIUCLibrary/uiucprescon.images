@@ -2,6 +2,40 @@
 requires = ["setuptools>=40.8.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "uiucprescon.images"
+version = "0.0.6.dev"
+dependencies = [
+    "pykdu_compress>=0.1.7b2"
+    ]
+readme = "README.rst"
+license = {text = "University of Illinois/NCSA Open Source License"}
+authors = [
+    {name = "University Library at The University of Illinois at Urbana Champaign: Preservation Services", email = "prescons@library.illinois.edu"},
+]
+maintainers = [
+    {name = "Henry Borchers", email = "hborcher@illinois.edu"}
+]
+description = "Process image files"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Documentation = "https://www.library.illinois.edu/dccdocs/uiucprescon.images"
+Download = "https://github.com/UIUCLibrary/uiucprescon.images"
+
+[tool.setuptools]
+zip-safe = false
+
+[tool.setuptools.packages.find]
+where = ["uiucprescon"]
+
+[tool.setuptools.package-data]
+"uiucprescon.images" = ["py.typed"]
 
 [tool.cibuildwheel]
 test-requires = [
@@ -67,3 +101,19 @@ CONAN_USER_HOME="/tmp/conan"
 CONAN_DEFAULT_PROFILE_PATH="/tmp/conan/.conan/profiles/default"
 CONAN_BUILD_INFO_DIR="/tmp/conan/build/"
 PYTHONFAULTHANDLER="True"
+
+[tool.pytest.ini_options]
+addopts = "--verbose -s"
+testpaths = [
+    "tests"
+]
+junit_family = "xunit1"
+
+
+[tool.coverage.run]
+source = ["."]
+
+[tool.coverage.report]
+include =[
+    "uiucprescon/images/*"
+]
