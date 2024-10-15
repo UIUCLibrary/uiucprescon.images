@@ -298,82 +298,6 @@ def testPythonPackages(){
     }
 }
 
-def startup(){
-    parallel(
-        [
-            failFast: true,
-            'Getting Distribution Info': {
-                node('linux && docker') {
-                    try{
-                        checkout scm
-                        docker.image('python').inside {
-                            timeout(2){
-                                withEnv(['PIP_NO_CACHE_DIR=off']) {
-                                    sh(
-                                       label: 'Running setup.py with dist_info',
-                                       script: """python --version
-                                                  python setup.py dist_info
-                                               """
-                                    )
-                                }
-                                stash includes: '*.dist-info/**', name: 'DIST-INFO'
-                                archiveArtifacts artifacts: '*.dist-info/**'
-                            }
-                        }
-                    } finally{
-                        cleanWs(
-                           deleteDirs: true,
-                           patterns: [
-                              [pattern: '*.dist-info/', type: 'INCLUDE'],
-                              [pattern: '**/__pycache__', type: 'INCLUDE'],
-                              [pattern: '.eggs/', type: 'INCLUDE'],
-                          ]
-                       )
-                    }
-                }
-            }
-        ]
-    )
-}
-def get_props(){
-    stage('Reading Package Metadata'){
-        node() {
-            try{
-                unstash 'DIST-INFO'
-                def metadataFile = findFiles( glob: '*.dist-info/METADATA')[0]
-                def packageMetadata = readProperties(
-                    interpolate: true,
-                    file: metadataFile.path
-                    )
-
-                if(packageMetadata.Name == null){
-                    error("No 'Name' located in ${metadataFile.path} file")
-                }
-
-                if(packageMetadata.Version == null){
-                    error("No 'Version' located in ${metadataFile.path} file")
-                }
-
-                echo """Metadata for ${metadataFile.path}:
-
-Name      ${packageMetadata.Name}
-Version   ${packageMetadata.Version}
-"""
-                return packageMetadata
-            } finally {
-                cleanWs(
-                    deleteDirs: true,
-                    patterns: [
-                            [pattern: '*.dist-info/', type: 'INCLUDE'],
-                        ]
-                    )
-            }
-        }
-    }
-}
-startup()
-props = get_props()
-
 pipeline {
     agent none
     parameters {
@@ -439,11 +363,12 @@ pipeline {
                                 success{
                                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                                     script{
+                                        def props = readTOML( file: 'pyproject.toml')['project']
                                         zip(
                                             archive: true,
                                             dir: "${WORKSPACE}/build/docs/html",
                                             glob: '',
-                                            zipFile: "dist/${props.Name}-${props.Version}.doc.zip"
+                                            zipFile: "dist/${props.name}-${props.version}.doc.zip"
                                         )
                                         stash(
                                             name: 'DOCS_ARCHIVE',
@@ -658,15 +583,16 @@ pipeline {
                                     steps{
                                         script{
                                             withSonarQubeEnv(installationName:'sonarcloud', credentialsId: params.SONARCLOUD_TOKEN) {
+                                                def props = readTOML( file: 'pyproject.toml')['project']
                                                 if (env.CHANGE_ID){
                                                     sh(
                                                         label: 'Running Sonar Scanner',
-                                                        script:"sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
+                                                        script:"sonar-scanner -Dsonar.projectVersion=${props.version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
                                                         )
                                                 } else {
                                                     sh(
                                                         label: 'Running Sonar Scanner',
-                                                        script: "sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.branch.name=${env.BRANCH_NAME}"
+                                                        script: "sonar-scanner -Dsonar.projectVersion=${props.version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.branch.name=${env.BRANCH_NAME}"
                                                         )
                                                 }
                                             }
