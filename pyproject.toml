@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "uiucprescon.images"
 version = "0.0.6.dev"
 dependencies = [
-    "pykdu_compress>=0.1.7b2"
+    "pykdu_compress>=0.1.7"
     ]
 readme = "README.rst"
 license = {text = "University of Illinois/NCSA Open Source License"}
@@ -30,9 +30,7 @@ Download = "https://github.com/UIUCLibrary/uiucprescon.images"
 
 [tool.setuptools]
 zip-safe = false
-
-[tool.setuptools.packages.find]
-where = ["uiucprescon"]
+packages=["uiucprescon.images"]
 
 [tool.setuptools.package-data]
 "uiucprescon.images" = ["py.typed"]
