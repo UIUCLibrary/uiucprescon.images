@@ -8,6 +8,7 @@ version = "0.0.6.dev"
 dependencies = [
     "pykdu_compress>=0.1.7"
     ]
+requires-python = ">=3.9"
 readme = "README.rst"
 license = {text = "University of Illinois/NCSA Open Source License"}
 authors = [
