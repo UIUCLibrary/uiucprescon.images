@@ -570,7 +570,7 @@ def call(){
                                     script{
                                         def envs = []
                                         node('docker && windows'){
-                                            docker.image('python').inside('--mount source=python-tmp-uiucpreson-images,target=C:\\Users\\ContainerUser\\Documents'){
+                                            docker.image('python').inside("--mount type=volume,source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"){
                                                 try{
                                                     checkout scm
                                                     bat(script: 'python -m venv venv && venv\\Scripts\\pip install uv')
@@ -597,7 +597,7 @@ def call(){
                                                     "Tox Environment: ${toxEnv}",
                                                     {
                                                         node('docker && windows'){
-                                                            docker.image('python').inside('--mount source=python-tmp-uiucpreson-images,target=C:\\Users\\ContainerUser\\Documents --mount source=msvc-runtime,target=$VC_RUNTIME_INSTALLER_LOCATION'){
+                                                            docker.image('python').inside("--mount type=volume,source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR} --mount source=msvc-runtime,target=${env.VC_RUNTIME_INSTALLER_LOCATION}"){
                                                                 checkout scm
                                                                 try{
                                                                     installMSVCRuntime(env.VC_RUNTIME_INSTALLER_LOCATION)
