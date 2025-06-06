@@ -33,6 +33,7 @@ Download = "https://github.com/UIUCLibrary/uiucprescon.images"
 [tool.setuptools]
 zip-safe = false
 packages=["uiucprescon.images"]
+package-dir = {"" = "src"}
 
 [tool.setuptools.package-data]
 "uiucprescon.images" = ["py.typed"]
@@ -107,13 +108,14 @@ addopts = "--verbose -s"
 testpaths = [
     "tests"
 ]
+pythonpath = "src"
 junit_family = "xunit1"
 
 
 [tool.coverage.run]
-source = ["."]
+source = ["src"]
 
 [tool.coverage.report]
 include =[
-    "uiucprescon/images/*"
+    "src/*"
 ]

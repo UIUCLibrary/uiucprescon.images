@@ -247,7 +247,7 @@ def call(){
                                                                 sh(label:'Running MyPy',
                                                                    script: '''. ./venv/bin/activate
                                                                               mkdir -p logs
-                                                                              mypy -p uiucprescon --html-report reports/mypy/html | tee logs/mypy.log
+                                                                              mypy src --html-report reports/mypy/html | tee logs/mypy.log
                                                                               '''
                                                                    )
                                                            }
@@ -266,7 +266,7 @@ def call(){
                                                                 sh(label:'Running Flake8',
                                                                    script: '''. ./venv/bin/activate
                                                                               mkdir -p logs
-                                                                              flake8 uiucprescon --tee --output-file=logs/flake8.log
+                                                                              flake8 src --tee --output-file=logs/flake8.log
                                                                            '''
                                                                 )
                                                             }
@@ -285,13 +285,13 @@ def call(){
                                                                     sh(label: 'Running pylint',
                                                                        script: '''. ./venv/bin/activate
                                                                                   mkdir -p reports
-                                                                                  pylint uiucprescon --persistent=n -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"
+                                                                                  pylint src --persistent=n -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"
                                                                                '''
                                                                     )
                                                                 }
                                                                 sh(
                                                                     script: '''. ./venv/bin/activate
-                                                                               pylint uiucprescon --persistent=n  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint_issues.txt
+                                                                               pylint src --persistent=n  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint_issues.txt
                                                                             ''',
                                                                     label: 'Running pylint for sonarqube',
                                                                     returnStatus: true
@@ -312,7 +312,7 @@ def call(){
                                                                     label: 'Running bandit',
                                                                     script: '''. ./venv/bin/activate
                                                                                mkdir -p reports
-                                                                               bandit --format json --output reports/bandit-report.json --recursive uiucprescon/images || bandit -f html --recursive uiucprescon/images --output reports/bandit-report.html
+                                                                               bandit --format json --output reports/bandit-report.json --recursive src  || bandit -f html --recursive src --output reports/bandit-report.html
                                                                                '''
                                                                 )
                                                             }
@@ -333,7 +333,7 @@ def call(){
                                                     }
                                                     stage('Task Scanner'){
                                                         steps{
-                                                            recordIssues(tools: [taskScanner(highTags: 'FIXME', includePattern: 'uiucprescon/**/*.py', normalTags: 'TODO')])
+                                                            recordIssues(tools: [taskScanner(highTags: 'FIXME', includePattern: 'src/uiucprescon/**/*.py', normalTags: 'TODO')])
                                                         }
                                                     }
                                                     stage('pyDocStyle'){
@@ -344,7 +344,7 @@ def call(){
                                                                     sh(
                                                                         label: 'Run pydocstyle',
                                                                         script: '''. ./venv/bin/activate
-                                                                                   pydocstyle uiucprescon
+                                                                                   pydocstyle src
                                                                                 '''
                                                                     )
                                                                 }
