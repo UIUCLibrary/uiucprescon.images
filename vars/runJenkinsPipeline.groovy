@@ -133,27 +133,25 @@ def call(){
                                                        '''
                                             )
                                     }
+                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
+                                    script{
+                                        def props = readTOML( file: 'pyproject.toml')['project']
+                                        zip(
+                                            archive: true,
+                                            dir: "${WORKSPACE}/build/docs/html",
+                                            glob: '',
+                                            zipFile: "dist/${props.name}-${props.version}.doc.zip"
+                                        )
+                                        stash(
+                                            name: 'DOCS_ARCHIVE',
+                                            includes: 'dist/*.doc.zip,build/docs/html/**'
+                                        )
+                                    }
                                 }
                                 post{
                                     always {
                                         recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
                                         archiveArtifacts artifacts: 'logs/build_sphinx.log'
-                                    }
-                                    success{
-                                        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                                        script{
-                                            def props = readTOML( file: 'pyproject.toml')['project']
-                                            zip(
-                                                archive: true,
-                                                dir: "${WORKSPACE}/build/docs/html",
-                                                glob: '',
-                                                zipFile: "dist/${props.name}-${props.version}.doc.zip"
-                                            )
-                                            stash(
-                                                name: 'DOCS_ARCHIVE',
-                                                includes: 'dist/*.doc.zip,build/docs/html/**'
-                                            )
-                                        }
                                     }
                                     cleanup{
                                         sh 'git clean -dfx'
@@ -619,14 +617,12 @@ def call(){
                                             '''
                                 )
                             }
+                            archiveArtifacts artifacts: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', fingerprint: true
+                            stash includes: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', name: 'PYTHON_PACKAGES'
+                            stash includes: 'dist/*.whl', name: 'wheel'
+                            stash includes: 'dist/*.tar.gz,dist/*.zip', name: 'sdist'
                         }
                         post{
-                            success{
-                                archiveArtifacts artifacts: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', fingerprint: true
-                                stash includes: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', name: 'PYTHON_PACKAGES'
-                                stash includes: 'dist/*.whl', name: 'wheel'
-                                stash includes: 'dist/*.tar.gz,dist/*.zip', name: 'sdist'
-                            }
                             cleanup{
                                 sh 'git clean -dfx'
                             }
