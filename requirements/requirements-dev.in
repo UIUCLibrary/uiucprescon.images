@@ -10,5 +10,5 @@ pydocstyle
 pytest
 pykdu_compress>=0.1.7b2
 Sphinx
-tox<4.0
+tox
 twine

@@ -16,15 +16,19 @@ bcrypt==4.3.0
     # via paramiko
 build==1.2.2.post1
     # via -r requirements/requirements-dev.in
+cachetools==6.0.0
+    # via tox
 certifi==2025.4.26
     # via requests
 cffi==1.17.1
     # via
     #   cryptography
     #   pynacl
+chardet==5.2.0
+    # via tox
 charset-normalizer==3.4.2
     # via requests
-colorama==0.4.6 ; os_name == 'nt' or sys_platform == 'win32'
+colorama==0.4.6
     # via
     #   bandit
     #   build
@@ -113,6 +117,7 @@ nh3==0.2.21
 packaging==25.0
     # via
     #   build
+    #   pyproject-api
     #   pytest
     #   sphinx
     #   tox
@@ -126,13 +131,12 @@ pbr==6.1.1
 platformdirs==4.3.8
     # via
     #   pylint
+    #   tox
     #   virtualenv
 pluggy==1.6.0
     # via
     #   pytest
     #   tox
-py==1.11.0
-    # via tox
 pycodestyle==2.13.0
     # via flake8
 pycparser==2.22
@@ -155,6 +159,8 @@ pylint==3.3.7
     # via -r requirements/requirements-dev.in
 pynacl==1.5.0
     # via paramiko
+pyproject-api==1.9.1
+    # via tox
 pyproject-hooks==1.2.0
     # via build
 pytest==8.4.0
@@ -184,9 +190,7 @@ secretstorage==3.3.3 ; platform_machine != 'ppc64le' and platform_machine != 's3
 setuptools==80.9.0
     # via pbr
 six==1.17.0
-    # via
-    #   bandit
-    #   tox
+    # via bandit
 smmap==5.0.2
     # via gitdb
 snowballstemmer==3.0.1
@@ -218,12 +222,13 @@ tomli==2.2.1 ; python_full_version < '3.11'
     #   build
     #   mypy
     #   pylint
+    #   pyproject-api
     #   pytest
     #   sphinx
     #   tox
 tomlkit==0.13.3
     # via pylint
-tox==3.28.0
+tox==4.26.0
     # via -r requirements/requirements-dev.in
 twine==6.1.0
     # via -r requirements/requirements-dev.in
@@ -234,6 +239,7 @@ typing-extensions==4.14.0
     #   mypy
     #   pylint
     #   rich
+    #   tox
 urllib3==2.4.0
     # via
     #   requests
