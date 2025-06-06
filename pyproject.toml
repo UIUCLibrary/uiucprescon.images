@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=40.8.0", "wheel"]
+requires = ["setuptools>=77.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -10,7 +10,8 @@ dependencies = [
     ]
 requires-python = ">=3.9"
 readme = "README.rst"
-license = {text = "University of Illinois/NCSA Open Source License"}
+license = "NCSA"
+license-files = ["LICENSE"]
 authors = [
     {name = "University Library at The University of Illinois at Urbana Champaign: Preservation Services", email = "prescons@library.illinois.edu"},
 ]
@@ -32,6 +33,7 @@ Download = "https://github.com/UIUCLibrary/uiucprescon.images"
 [tool.setuptools]
 zip-safe = false
 packages=["uiucprescon.images"]
+package-dir = {"" = "src"}
 
 [tool.setuptools.package-data]
 "uiucprescon.images" = ["py.typed"]
@@ -106,13 +108,14 @@ addopts = "--verbose -s"
 testpaths = [
     "tests"
 ]
+pythonpath = "src"
 junit_family = "xunit1"
 
 
 [tool.coverage.run]
-source = ["."]
+source = ["src"]
 
 [tool.coverage.report]
 include =[
-    "uiucprescon/images/*"
+    "src/*"
 ]

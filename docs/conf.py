@@ -23,7 +23,7 @@ import tomllib
 #     from setuptools.config import read_configuration
 
 
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath(os.path.join('..', "src")))
 
 
 def get_project_metadata():
