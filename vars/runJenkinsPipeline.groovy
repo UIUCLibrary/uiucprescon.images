@@ -156,15 +156,7 @@ def call(){
                                         }
                                     }
                                     cleanup{
-                                        cleanWs(
-                                            patterns: [
-                                                [pattern: 'logs/', type: 'INCLUDE'],
-                                                [pattern: 'build/docs/', type: 'INCLUDE'],
-                                                [pattern: 'dist/', type: 'INCLUDE'],
-                                                [pattern: '**/__pycache__', type: 'INCLUDE'],
-                                            ],
-                                            deleteDirs: true
-                                        )
+                                        sh 'git clean -dfx'
                                     }
                                 }
                             }
@@ -449,25 +441,7 @@ def call(){
                                 }
                                 post{
                                     cleanup{
-                                        cleanWs(
-                                            patterns: [
-                                                [pattern: 'dist/', type: 'INCLUDE'],
-                                                [pattern: 'venv/', type: 'INCLUDE'],
-                                                [pattern: '.tox/', type: 'INCLUDE'],
-                                                [pattern: 'build/', type: 'INCLUDE'],
-                                                [pattern: 'coverage-sources.zip', type: 'INCLUDE'],
-                                                [pattern: 'logs/', type: 'INCLUDE'],
-                                                [pattern: 'reports/', type: 'INCLUDE'],
-                                                [pattern: '*.egg-info/', type: 'INCLUDE'],
-                                                [pattern: '.pytest_cache/', type: 'INCLUDE'],
-                                                [pattern: '.scannerwork/', type: 'INCLUDE'],
-                                                [pattern: 'logs/', type: 'INCLUDE'],
-                                                [pattern: 'reports/', type: 'INCLUDE'],
-                                                [pattern: '*.dist-info/', type: 'INCLUDE'],
-                                                [pattern: '.mypy_cache/', type: 'INCLUDE'],
-                                            ],
-                                            deleteDirs: true,
-                                        )
+                                        sh 'git clean -dfx'
                                     }
                                 }
                             }
@@ -504,13 +478,7 @@ def call(){
                                                     ).trim().split('\n')
                                                 }
                                             } finally{
-                                                cleanWs(
-                                                    patterns: [
-                                                        [pattern: 'venv/', type: 'INCLUDE'],
-                                                        [pattern: '.tox', type: 'INCLUDE'],
-                                                        [pattern: '**/__pycache__/', type: 'INCLUDE'],
-                                                    ]
-                                                )
+                                                sh "${tool(name: 'Default', type: 'git')} clean -dfx"
                                             }
                                         }
                                         parallel(
@@ -540,13 +508,7 @@ def call(){
                                                                     }
                                                                 }
                                                             } finally{
-                                                                cleanWs(
-                                                                    patterns: [
-                                                                        [pattern: 'venv/', type: 'INCLUDE'],
-                                                                        [pattern: '.tox', type: 'INCLUDE'],
-                                                                        [pattern: '**/__pycache__/', type: 'INCLUDE'],
-                                                                    ]
-                                                                )
+                                                                sh "${tool(name: 'Default', type: 'git')} clean -dfx"
                                                             }
                                                         }
                                                     }
@@ -583,13 +545,7 @@ def call(){
                                                     ).trim().split('\r\n')
                                                 }
                                             } finally{
-                                                cleanWs(
-                                                    patterns: [
-                                                        [pattern: 'venv/', type: 'INCLUDE'],
-                                                        [pattern: '.tox', type: 'INCLUDE'],
-                                                        [pattern: '**/__pycache__/', type: 'INCLUDE'],
-                                                    ]
-                                                )
+                                                bat "${tool(name: 'Default', type: 'git')} clean -dfx"
                                             }
                                         }
                                         parallel(
@@ -616,13 +572,7 @@ def call(){
                                                                     }
                                                                 }
                                                             } finally{
-                                                                cleanWs(
-                                                                    patterns: [
-                                                                        [pattern: 'venv/', type: 'INCLUDE'],
-                                                                        [pattern: '.tox', type: 'INCLUDE'],
-                                                                        [pattern: '**/__pycache__/', type: 'INCLUDE'],
-                                                                    ]
-                                                                )
+                                                                bat "${tool(name: 'Default', type: 'git')} clean -dfx"
                                                             }
                                                         }
                                                     }
@@ -678,14 +628,7 @@ def call(){
                                 stash includes: 'dist/*.tar.gz,dist/*.zip', name: 'sdist'
                             }
                             cleanup{
-                                cleanWs(
-                                    deleteDirs: true,
-                                    patterns: [
-                                        [pattern: '**/__pycache__/', type: 'INCLUDE'],
-                                        [pattern: 'venv/', type: 'INCLUDE'],
-                                        [pattern: 'dist/', type: 'INCLUDE']
-                                    ]
-                                )
+                                sh 'git clean -dfx'
                             }
                         }
                     }
