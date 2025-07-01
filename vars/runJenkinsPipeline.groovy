@@ -181,13 +181,13 @@ def call(){
                                     UV_CACHE_DIR='/tmp/uvcache'
                                     UV_PYTHON = '3.12'
                                 }
-                                options {
-                                  retry(conditions: [agent()], count: 3)
-                                }
                                 stages{
                                     stage('Test') {
                                         stages{
                                             stage('Configuring Testing Environment'){
+                                                options {
+                                                    retry(3)
+                                                }
                                                 steps{
                                                     sh(
                                                         label: 'Create virtual environment',
@@ -206,6 +206,17 @@ def call(){
                                                                    uv pip install -e .
                                                                 '''
                                                     )
+                                                }
+                                                post{
+                                                    failure {
+                                                        cleanWs(
+                                                            deleteDirs: true,
+                                                            patterns: [
+                                                                [pattern: 'bootstrap_uv/', type: 'INCLUDE'],
+                                                                [pattern: 'venv/', type: 'INCLUDE'],
+                                                            ]
+                                                        )
+                                                    }
                                                 }
                                             }
                                             stage('Running Tests'){
