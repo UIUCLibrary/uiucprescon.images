@@ -9,7 +9,7 @@ build==1.0.3
 certifi==2023.11.17
 cffi==1.16.0
 charset-normalizer==3.3.2
-coverage==7.4.0
+coverage==7.9.1
 cryptography==41.0.7
 dill==0.3.7
 distlib==0.3.8
