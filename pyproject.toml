@@ -119,3 +119,6 @@ source = ["src"]
 include =[
     "src/*"
 ]
+
+[tool.uv]
+cache-keys = [{ file = "pyproject.toml" }, { file = "requirements-dev.txt" }]
