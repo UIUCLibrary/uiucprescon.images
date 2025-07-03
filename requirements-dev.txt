@@ -38,7 +38,7 @@ colorama==0.4.6
     #   tox
 coverage==7.9.1
     # via -r requirements/requirements-dev.in
-cryptography==45.0.4
+cryptography==45.0.5
     # via
     #   paramiko
     #   secretstorage
