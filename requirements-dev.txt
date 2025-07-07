@@ -232,7 +232,7 @@ tox==4.27.0
     # via -r requirements/requirements-dev.in
 twine==6.1.0
     # via -r requirements/requirements-dev.in
-typing-extensions==4.14.0
+typing-extensions==4.14.1
     # via
     #   astroid
     #   exceptiongroup
