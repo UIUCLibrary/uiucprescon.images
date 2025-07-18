@@ -112,7 +112,7 @@ mypy==1.16.1
     # via -r requirements/requirements-dev.in
 mypy-extensions==1.1.0
     # via mypy
-nh3==0.2.21
+nh3==0.3.0
     # via readme-renderer
 packaging==25.0
     # via
