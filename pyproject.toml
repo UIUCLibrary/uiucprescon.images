@@ -8,7 +8,7 @@ version = "0.0.6.dev"
 dependencies = [
     "pykdu_compress>=0.1.7"
     ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 readme = "README.rst"
 license = "NCSA"
 license-files = ["LICENSE"]
@@ -29,6 +29,42 @@ classifiers = [
 [project.urls]
 Documentation = "https://www.library.illinois.edu/dccdocs/uiucprescon.images"
 Download = "https://github.com/UIUCLibrary/uiucprescon.images"
+
+[dependency-groups]
+docs = ["sphinx"]
+type_checking = ["mypy", "lxml",]
+lint = [
+    "bandit",
+    "flake8",
+    "pydocstyle",
+    "pylint",
+    {include-group = "type_checking"},
+]
+tox = ["tox"]
+test = ["pytest", "coverage"]
+dev = [
+    {include-group = "docs"},
+    {include-group = "lint"},
+    {include-group = "test"},
+]
+release = ["twine"]
+ci = [
+    "pysonar",
+    {include-group = "release"},
+    {include-group = "dev"},
+]
+
+[tool.uv.sources]
+pykdu-compress = {index = "uiuc_prescon_python"}
+
+[[tool.uv.index]]
+url = "https://pypi.org/simple"
+default = true
+
+[[tool.uv.index]]
+name = "uiuc_prescon_python"
+url = "https://nexus.library.illinois.edu/repository/uiuc_prescon_python/simple"
+explicit = true
 
 [tool.setuptools]
 zip-safe = false
@@ -120,5 +156,3 @@ include =[
     "src/*"
 ]
 
-[tool.uv]
-cache-keys = [{ file = "pyproject.toml" }, { file = "requirements-dev.txt" }]
