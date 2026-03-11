@@ -110,14 +110,13 @@ def call(){
                             stage('Sphinx Documentation'){
                                 agent {
                                     docker{
-                                        image 'python'
+                                        image 'ghcr.io/astral-sh/uv:debian'
                                         label 'docker && linux && x86_64' // needed for pysonar-scanner which is x86_64 only as of 0.2.0.520
                                         args '--mount source=python-tmp-uiucpreson-images,target=/tmp --tmpfs /.local/share:exec'
                                     }
                                 }
                                 environment{
                                     PIP_CACHE_DIR='/tmp/pipcache'
-                                    UV_INDEX_STRATEGY='unsafe-best-match'
                                     UV_TOOL_DIR='/tmp/uvtools'
                                     UV_PYTHON_CACHE_DIR='/tmp/uvpython'
                                     UV_CACHE_DIR='/tmp/uvcache'
@@ -127,11 +126,8 @@ def call(){
                                     catchError(buildResult: 'UNSTABLE', message: 'Building documentation produced an error or a warning', stageResult: 'UNSTABLE') {
                                         sh(
                                             label: 'Building docs',
-                                            script: '''python3 -m venv venv
-                                                       trap "rm -rf venv" EXIT
-                                                       venv/bin/pip install --disable-pip-version-check uv
-                                                       mkdir -p logs
-                                                       venv/bin/uv run sphinx-build docs build/docs/html -d build/docs/.doctrees -w logs/build_sphinx.log -W --keep-going
+                                            script: '''mkdir -p logs
+                                                       uv run sphinx-build docs build/docs/html -d build/docs/.doctrees -w logs/build_sphinx.log -W --keep-going
                                                        '''
                                             )
                                     }
@@ -170,14 +166,13 @@ def call(){
                             stage('Code Quality'){
                                 agent {
                                     docker{
-                                        image 'python'
+                                        image 'ghcr.io/astral-sh/uv:debian'
                                         label 'docker && linux && x86_64' // needed for pysonar-scanner which is x86_64 only as of 0.2.0.520
-                                        args '--mount source=python-tmp-uiucpreson-images,target=/tmp --tmpfs /.local/share:exec'
+                                        args '--mount source=python-tmp-uiucpreson-images,target=/tmp --tmpfs /.local/share:exec --tmpfs /.config'
                                     }
                                 }
                                 environment{
                                     PIP_CACHE_DIR='/tmp/pipcache'
-                                    UV_INDEX_STRATEGY='unsafe-best-match'
                                     UV_TOOL_DIR='/tmp/uvtools'
                                     UV_PYTHON_CACHE_DIR='/tmp/uvpython'
                                     UV_CACHE_DIR='/tmp/uvcache'
@@ -193,14 +188,14 @@ def call(){
                                                 steps{
                                                     sh(
                                                         label: 'Create virtual environment',
-                                                        script: '''python3 -m venv bootstrap_uv
-                                                                   bootstrap_uv/bin/pip install --disable-pip-version-check uv
-                                                                   bootstrap_uv/bin/uv venv venv
-                                                                   UV_PROJECT_ENVIRONMENT=./venv bootstrap_uv/bin/uv sync --frozen --group ci
-                                                                   bootstrap_uv/bin/uv pip install --python=./venv/bin/python uv
-                                                                   rm -rf bootstrap_uv
-                                                                   '''
-                                                               )
+                                                        script: 'uv sync --frozen --group ci'
+                                                        )
+                                                    sh(
+                                                        label: 'Creating required directories for testing',
+                                                        script: '''mkdir -p logs
+                                                                   mkdir -p reports
+                                                                '''
+                                                        )
                                                 }
                                                 post{
                                                     failure {
@@ -219,7 +214,7 @@ def call(){
                                                     stage('Run PyTest Unit Tests'){
                                                         steps{
                                                             catchError(buildResult: 'UNSTABLE', message: 'PyTest found issues', stageResult: 'UNSTABLE') {
-                                                                sh './venv/bin/uv run coverage run --parallel-mode -m pytest --junitxml=reports/pytest/junit-pytest.xml'
+                                                                sh 'uv run coverage run --parallel-mode -m pytest --junitxml=reports/pytest/junit-pytest.xml'
                                                             }
                                                         }
                                                         post {
@@ -232,9 +227,7 @@ def call(){
                                                         steps {
                                                             catchError(buildResult: 'SUCCESS', message: 'DocTest found issues', stageResult: 'UNSTABLE') {
                                                                 sh(label:'Running Doctest',
-                                                                   script: '''mkdir -p logs
-                                                                              ./venv/bin/uv run -m sphinx -b doctest docs build/docs -d build/docs/doctrees -w logs/doctest.log
-                                                                           '''
+                                                                   script: 'uv run -m sphinx -b doctest docs build/docs -d build/docs/doctrees -w logs/doctest.log'
                                                                 )
                                                             }
                                                         }
@@ -248,9 +241,7 @@ def call(){
                                                         steps{
                                                             catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
                                                                 sh(label:'Running MyPy',
-                                                                   script: '''mkdir -p logs
-                                                                              ./venv/bin/uv run mypy src --html-report reports/mypy/html | tee logs/mypy.log
-                                                                              '''
+                                                                   script: 'uv run mypy src --html-report reports/mypy/html | tee logs/mypy.log'
                                                                    )
                                                            }
                                                         }
@@ -266,9 +257,7 @@ def call(){
                                                         steps{
                                                             catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
                                                                 sh(label:'Running Flake8',
-                                                                   script: '''mkdir -p logs
-                                                                              ./venv/bin/uv run flake8 src --tee --output-file=logs/flake8.log
-                                                                           '''
+                                                                   script: 'uv run flake8 src --tee --output-file=logs/flake8.log'
                                                                 )
                                                             }
                                                         }
@@ -284,13 +273,11 @@ def call(){
                                                             catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
                                                                 tee('reports/pylint.txt'){
                                                                     sh(label: 'Running pylint',
-                                                                       script: '''mkdir -p reports
-                                                                                  ./venv/bin/uv run pylint src --persistent=n -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"
-                                                                               '''
+                                                                       script: 'uv run pylint src --persistent=n -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"'
                                                                     )
                                                                 }
                                                                 sh(
-                                                                    script: './venv/bin/uv run pylint src --persistent=n  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint_issues.txt',
+                                                                    script: 'uv run pylint src --persistent=n  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint_issues.txt',
                                                                     label: 'Running pylint for sonarqube',
                                                                     returnStatus: true
                                                                 )
@@ -308,9 +295,7 @@ def call(){
                                                             catchError(buildResult: 'SUCCESS', message: 'Bandit found issues', stageResult: 'UNSTABLE') {
                                                                 sh(
                                                                     label: 'Running bandit',
-                                                                    script: '''mkdir -p reports
-                                                                               ./venv/bin/uv run bandit --format json --output reports/bandit-report.json --recursive src  || bandit -f html --recursive src --output reports/bandit-report.html
-                                                                            '''
+                                                                    script: 'uv run bandit --format json --output reports/bandit-report.json --recursive src  || uv run bandit -f html --recursive src --output reports/bandit-report.html'
                                                                 )
                                                             }
                                                         }
@@ -333,13 +318,20 @@ def call(){
                                                             recordIssues(tools: [taskScanner(highTags: 'FIXME', includePattern: 'src/uiucprescon/**/*.py', normalTags: 'TODO')])
                                                         }
                                                     }
+                                                    stage('Audit Lockfile Dependencies'){
+                                                        steps{
+                                                            catchError(buildResult: 'UNSTABLE', message: 'uv-secure found issues', stageResult: 'UNSTABLE') {
+                                                                sh 'uv run --only-group=audit-dependencies --frozen --isolated uv-secure --disable-cache uv.lock'
+                                                            }
+                                                        }
+                                                    }
                                                     stage('pyDocStyle'){
                                                         steps{
                                                             catchError(buildResult: 'SUCCESS', message: 'Did not pass all pyDocStyle tests', stageResult: 'UNSTABLE') {
                                                                 tee('reports/pydocstyle-report.txt'){
                                                                     sh(
                                                                         label: 'Run pydocstyle',
-                                                                        script: './venv/bin/uv run pydocstyle src'
+                                                                        script: 'uv run pydocstyle src'
                                                                     )
                                                                 }
                                                             }
@@ -353,8 +345,8 @@ def call(){
                                                 }
                                                 post{
                                                     always{
-                                                        sh '''./venv/bin/uv run coverage combine
-                                                              ./venv/bin/uv run coverage xml -o reports/coverage.xml
+                                                        sh '''uv run coverage combine
+                                                              uv run coverage xml -o reports/coverage.xml
                                                            '''
                                                         recordCoverage(tools: [[parser: 'COBERTURA', pattern: 'reports/coverage.xml']])
                                                         archiveArtifacts 'reports/coverage.xml'
@@ -364,7 +356,6 @@ def call(){
                                         }
                                     }
                                     stage('Sonarcloud Analysis'){
-
                                         options{
                                             lock('uiucprescon.images-sonarscanner')
                                             retry(3)
@@ -399,7 +390,7 @@ def call(){
                                                         sourceInstruction = '-Dsonar.branch.name=$BRANCH_NAME'
                                                     }
                                                     withCredentials([string(credentialsId: params.SONARCLOUD_TOKEN, variable: 'token')]) {
-                                                        sh(label: 'Running Sonar Scanner', script: "./venv/bin/uv run --group ci pysonar -t \$token -Dsonar.projectVersion=$VERSION -Dsonar.buildString=\"$BUILD_TAG\" ${sourceInstruction}")
+                                                        sh(label: 'Running Sonar Scanner', script: "uv run pysonar -t \$token -Dsonar.projectVersion=$VERSION -Dsonar.buildString=\"$BUILD_TAG\" ${sourceInstruction}")
                                                     }
                                                 }
                                                 script{
@@ -437,7 +428,6 @@ def call(){
                                 }
                                 environment{
                                     PIP_CACHE_DIR='/tmp/pipcache'
-                                    UV_INDEX_STRATEGY='unsafe-best-match'
                                     UV_TOOL_DIR='/tmp/uvtools'
                                     UV_PYTHON_CACHE_DIR='/tmp/uvpython'
                                     UV_CACHE_DIR='/tmp/uvcache'
@@ -491,7 +481,6 @@ def call(){
                                     expression {return nodesByLabel('windows && docker && x86').size() > 0}
                                 }
                                 environment{
-                                    UV_INDEX_STRATEGY='unsafe-best-match'
                                     PIP_CACHE_DIR='C:\\Users\\ContainerUser\\Documents\\cache\\pipcache'
                                     UV_TOOL_DIR='C:\\Users\\ContainerUser\\Documents\\cache\\uvtools'
                                     UV_PYTHON_CACHE_DIR='C:\\Users\\ContainerUser\\Documents\\cache\\uvpython'
@@ -577,14 +566,13 @@ def call(){
                     stage('Building Source and Wheel formats'){
                         agent {
                             docker{
-                                image 'python'
+                                image 'ghcr.io/astral-sh/uv:debian'
                                 label 'linux && docker'
                                 args '--mount source=python-tmp-uiucpreson-images,target=/tmp'
                               }
                         }
                         environment{
                             PIP_CACHE_DIR='/tmp/pipcache'
-                            UV_INDEX_STRATEGY='unsafe-best-match'
                             UV_CACHE_DIR='/tmp/uvcache'
                         }
                         options {
@@ -594,10 +582,7 @@ def call(){
                             timeout(5){
                                 sh(
                                     label: 'Package',
-                                    script: '''python3 -m venv venv && venv/bin/pip install --disable-pip-version-check uv
-                                               trap "rm -rf venv" EXIT
-                                               ./venv/bin/uv build
-                                            '''
+                                    script: 'uv build'
                                 )
                             }
                             archiveArtifacts artifacts: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', fingerprint: true
@@ -615,19 +600,16 @@ def call(){
                         when{
                             equals expected: true, actual: params.TEST_PACKAGES
                         }
-                        environment{
-                            UV_INDEX_STRATEGY='unsafe-best-match'
-                        }
                         steps{
                             customMatrix(
                                 axes: [
                                     [
                                         name: 'PYTHON_VERSION',
-                                        values: ['3.10', '3.11', '3.12','3.13']
+                                        values: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.14t']
                                     ],
                                     [
                                         name: 'OS',
-                                        values: ['linux','macos','windows']
+                                        values: ['linux', 'macos', 'windows']
                                     ],
                                     [
                                         name: 'ARCHITECTURE',
@@ -662,7 +644,7 @@ def call(){
                                                         docker.image(isUnix() ? 'ghcr.io/astral-sh/uv:debian': 'python')
                                                             .inside(
                                                                 isUnix() ?
-                                                                    '--mount source=python-tmp-uiucpreson-images,target=/tmp --tmpfs /.local/share:exec'
+                                                                    '--mount source=python-tmp-uiucpreson-images,target=/tmp --tmpfs /.local/share:exec --tmpfs /.local/bin:exec'
                                                                 :
                                                                     "\
                                                                         --mount type=volume,source=uv_python_cache_dir,target=C:\\Users\\ContainerUser\\Documents\\cache\\uvpython \
@@ -727,10 +709,14 @@ def call(){
                                                         }
                                                     }
                                                 } finally{
-                                                    if(isUnix()){
-                                                        sh "${tool(name: 'Default', type: 'git')} clean -dfx"
+                                                    if(fileExists('.git')){
+                                                        if(isUnix()){
+                                                            sh "${tool(name: 'Default', type: 'git')} clean -dfx"
+                                                        } else {
+                                                            bat "${tool(name: 'Default', type: 'git')} clean -dfx"
+                                                        }
                                                     } else {
-                                                        bat "${tool(name: 'Default', type: 'git')} clean -dfx"
+                                                        echo 'No .git directory found, skipping cleanup'
                                                     }
                                                 }
                                             }
@@ -747,14 +733,13 @@ def call(){
                     stage('Deploy to pypi') {
                         environment{
                             PIP_CACHE_DIR='/tmp/pipcache'
-                            UV_INDEX_STRATEGY='unsafe-best-match'
                             UV_TOOL_DIR='/tmp/uvtools'
                             UV_PYTHON_CACHE_DIR='/tmp/uvpython'
                             UV_CACHE_DIR='/tmp/uvcache'
                         }
                         agent {
                             docker{
-                                image 'python'
+                                image 'ghcr.io/astral-sh/uv:debian'
                                 label 'docker && linux'
                                 args '--mount source=python-tmp-uiucpreson-images,target=/tmp'
                             }
@@ -783,12 +768,7 @@ def call(){
                         }
                         steps{
                             unstash 'PYTHON_PACKAGES'
-                            withEnv(
-                                [
-                                    "TWINE_REPOSITORY_URL=${SERVER_URL}",
-                                    'UV_INDEX_STRATEGY=unsafe-best-match'
-                                ]
-                            ){
+                            withEnv(["TWINE_REPOSITORY_URL=${SERVER_URL}"]){
                                 withCredentials(
                                     [
                                         usernamePassword(
@@ -828,14 +808,13 @@ def call(){
                         }
                         environment{
                             PIP_CACHE_DIR='/tmp/pipcache'
-                            UV_INDEX_STRATEGY='unsafe-best-match'
                             UV_TOOL_DIR='/tmp/uvtools'
                             UV_PYTHON_CACHE_DIR='/tmp/uvpython'
                             UV_CACHE_DIR='/tmp/uvcache'
                         }
                         agent {
                             docker{
-                                image 'python'
+                                image 'ghcr.io/astral-sh/uv:debian'
                                 label 'docker && linux'
                                 args '--mount source=python-tmp-uiucpreson-images,target=/tmp'
                             }
