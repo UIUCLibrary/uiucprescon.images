@@ -318,6 +318,13 @@ def call(){
                                                             recordIssues(tools: [taskScanner(highTags: 'FIXME', includePattern: 'src/uiucprescon/**/*.py', normalTags: 'TODO')])
                                                         }
                                                     }
+                                                    stage('Audit Lockfile Dependencies'){
+                                                        steps{
+                                                            catchError(buildResult: 'UNSTABLE', message: 'uv-secure found issues', stageResult: 'UNSTABLE') {
+                                                                sh 'uv run --only-group=audit-dependencies --frozen --isolated uv-secure --disable-cache uv.lock'
+                                                            }
+                                                        }
+                                                    }
                                                     stage('pyDocStyle'){
                                                         steps{
                                                             catchError(buildResult: 'SUCCESS', message: 'Did not pass all pyDocStyle tests', stageResult: 'UNSTABLE') {
@@ -349,7 +356,6 @@ def call(){
                                         }
                                     }
                                     stage('Sonarcloud Analysis'){
-
                                         options{
                                             lock('uiucprescon.images-sonarscanner')
                                             retry(3)

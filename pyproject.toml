@@ -31,6 +31,7 @@ Documentation = "https://www.library.illinois.edu/dccdocs/uiucprescon.images"
 Download = "https://github.com/UIUCLibrary/uiucprescon.images"
 
 [dependency-groups]
+audit-dependencies = ["uv-secure"]
 docs = ["sphinx"]
 type_checking = ["mypy", "lxml",]
 lint = [
