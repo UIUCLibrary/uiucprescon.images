@@ -719,10 +719,14 @@ def call(){
                                                         }
                                                     }
                                                 } finally{
-                                                    if(isUnix()){
-                                                        sh "${tool(name: 'Default', type: 'git')} clean -dfx"
+                                                    if(fileExists('.git')){
+                                                        if(isUnix()){
+                                                            sh "${tool(name: 'Default', type: 'git')} clean -dfx"
+                                                        } else {
+                                                            bat "${tool(name: 'Default', type: 'git')} clean -dfx"
+                                                        }
                                                     } else {
-                                                        bat "${tool(name: 'Default', type: 'git')} clean -dfx"
+                                                        echo 'No .git directory found, skipping cleanup'
                                                     }
                                                 }
                                             }
