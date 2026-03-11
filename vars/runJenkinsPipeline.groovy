@@ -171,7 +171,7 @@ def call(){
                                     docker{
                                         image 'python'
                                         label 'docker && linux && x86_64' // needed for pysonar-scanner which is x86_64 only as of 0.2.0.520
-                                        args '--mount source=python-tmp-uiucpreson-images,target=/tmp --tmpfs /.local/share:exec'
+                                        args '--mount source=python-tmp-uiucpreson-images,target=/tmp --tmpfs /.local/share:exec --tmpfs /.config'
                                     }
                                 }
                                 environment{
@@ -654,7 +654,7 @@ def call(){
                                                         docker.image(isUnix() ? 'ghcr.io/astral-sh/uv:debian': 'python')
                                                             .inside(
                                                                 isUnix() ?
-                                                                    '--mount source=python-tmp-uiucpreson-images,target=/tmp --tmpfs /.local/share:exec'
+                                                                    '--mount source=python-tmp-uiucpreson-images,target=/tmp --tmpfs /.local/share:exec --tmpfs /.local/bin:exec'
                                                                 :
                                                                     "\
                                                                         --mount type=volume,source=uv_python_cache_dir,target=C:\\Users\\ContainerUser\\Documents\\cache\\uvpython \
