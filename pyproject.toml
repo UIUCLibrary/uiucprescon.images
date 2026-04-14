@@ -48,6 +48,7 @@ tox-uv = [
 ]
 test = ["pytest", "coverage"]
 dev = [
+    {include-group = "audit-dependencies"},
     {include-group = "docs"},
     {include-group = "lint"},
     {include-group = "test"},
