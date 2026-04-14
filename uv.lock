@@ -2067,6 +2067,7 @@ ci = [
     { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "twine" },
+    { name = "uv-secure" },
 ]
 dev = [
     { name = "bandit" },
@@ -2079,6 +2080,7 @@ dev = [
     { name = "pytest" },
     { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "uv-secure" },
 ]
 docs = [
     { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -2128,6 +2130,7 @@ ci = [
     { name = "pytest" },
     { name = "sphinx" },
     { name = "twine" },
+    { name = "uv-secure" },
 ]
 dev = [
     { name = "bandit" },
@@ -2139,6 +2142,7 @@ dev = [
     { name = "pylint" },
     { name = "pytest" },
     { name = "sphinx" },
+    { name = "uv-secure" },
 ]
 docs = [{ name = "sphinx" }]
 lint = [
