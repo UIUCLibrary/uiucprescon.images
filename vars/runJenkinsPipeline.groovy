@@ -465,7 +465,7 @@ def call(){
                                                                 ){
                                                                     sh(label: 'Installing required Python version if not already installed', script: "uv python find cpython-${version} --quiet 2>/dev/null || uv python install cpython-${version}")
                                                                     sh(label: 'Running Tox',
-                                                                       script: "uv run --only-group=tox-uv --isolated tox run -e ${toxEnv} --runner uv-venv-lock-runner"
+                                                                       script: "uv run --only-group=tox-uv --isolated tox run -e ${toxEnv} --runner uv-venv-lock-runner --recreate"
                                                                        )
                                                                 }
                                                             } finally{
@@ -541,7 +541,7 @@ def call(){
                                                                     withEnv(["TOX_UV_PATH=${WORKSPACE}\\venv\\Scripts\\uv.exe"]){
                                                                         retry(3){
                                                                             bat(label: 'Running Tox',
-                                                                                script: "venv\\Scripts\\uv run --only-group=tox-uv --isolated tox run -e ${toxEnv} --runner uv-venv-lock-runner"
+                                                                                script: "venv\\Scripts\\uv run --only-group=tox-uv --isolated tox run -e ${toxEnv} --runner uv-venv-lock-runner --recreate"
                                                                             )
                                                                         }
                                                                     }
