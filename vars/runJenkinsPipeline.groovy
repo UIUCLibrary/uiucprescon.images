@@ -641,77 +641,105 @@ def call(){
                                     { entry ->
                                         stage('Test Package') {
                                             node("${entry.OS} && ${entry.ARCHITECTURE} ${['linux', 'windows'].contains(entry.OS) ? '&& docker': ''}"){
+                                                def thisIsUnix = isUnix()
                                                 try{
                                                     checkout scm
                                                     unstash 'PYTHON_PACKAGES'
-                                                    if(['linux', 'windows'].contains(entry.OS) && params.containsKey("INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()) && params["INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()]){
-                                                        docker.image(isUnix() ? 'ghcr.io/astral-sh/uv:debian': 'python')
-                                                            .inside("--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" " +
-                                                                (
-                                                                    isUnix() ?
-                                                                        '--mount source=python-tmp-uiucpreson-images,target=/tmp --tmpfs /.local/share:exec --tmpfs /.local/bin:exec -e PATH=\"/.local/bin:\$PATH'
-                                                                    :
-                                                                        "\
-                                                                            --mount type=volume,source=uv_python_cache_dir,target=C:\\Users\\ContainerUser\\Documents\\cache\\uvpython \
-                                                                            --mount type=volume,source=msvc-runtime,target=c:\\msvc_runtime \
-                                                                            --mount type=volume,source=pipcache,target=C:\\Users\\ContainerUser\\Documents\\cache\\pipcache \
-                                                                            --mount type=volume,source=uv_cache_dir,target=C:\\Users\\ContainerUser\\Documents\\cache\\uvcache \
-                                                                        "
-                                                                )
-                                                            ){
-                                                             if(isUnix()){
-                                                                withEnv([
-                                                                    'PIP_CACHE_DIR=/tmp/pipcache',
-                                                                    'UV_TOOL_DIR=/tmp/uvtools',
-                                                                    'UV_PYTHON_CACHE_DIR=/tmp/uvpython',
-                                                                    'UV_CACHE_DIR=/tmp/uvcache',
-                                                                ]){
-                                                                     sh(
-                                                                        label: 'Testing with tox',
-                                                                        script: """uv python find cpython-${entry.PYTHON_VERSION} --quiet 2>/dev/null || uv python install cpython-${entry.PYTHON_VERSION}
-                                                                                   uv run --only-group=tox-uv --isolated tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
-                                                                                """
+                                                    findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz').each{ pkg ->
+                                                        if(['linux', 'windows'].contains(entry.OS) && params.containsKey("INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()) && params["INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()]){
+                                                            docker.image(thisIsUnix ? 'ghcr.io/astral-sh/uv:debian': 'python')
+                                                                .inside("--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" " +
+                                                                    (
+                                                                        thisIsUnix ?
+                                                                            '--mount source=python-tmp-uiucpreson-images,target=/tmp --tmpfs /.local/share:exec --tmpfs /.local/bin:exec -e PATH=\"/.local/bin:\$PATH'
+                                                                        :
+                                                                            "\
+                                                                                --mount type=volume,source=uv_python_cache_dir,target=C:\\Users\\ContainerUser\\Documents\\cache\\uvpython \
+                                                                                --mount type=volume,source=msvc-runtime,target=c:\\msvc_runtime \
+                                                                                --mount type=volume,source=pipcache,target=C:\\Users\\ContainerUser\\Documents\\cache\\pipcache \
+                                                                                --mount type=volume,source=uv_cache_dir,target=C:\\Users\\ContainerUser\\Documents\\cache\\uvcache \
+                                                                            "
                                                                     )
-                                                                }
-                                                             } else {
-                                                                withEnv([
-                                                                    'PIP_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\cache\\pipcache',
-                                                                    'UV_TOOL_DIR=C:\\Users\\ContainerUser\\Documents\\cache\\uvtools',
-                                                                    'UV_PYTHON_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\cache\\uvpython',
-                                                                    'UV_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\cache\\uvcache',
-                                                                ]){
-                                                                    installMSVCRuntime('c:\\msvc_runtime\\')
-                                                                    bat(label:'Installing uv', script: 'python -m venv venv && .\\venv\\Scripts\\pip install --disable-pip-version-check uv && .\\venv\\Scripts\\uv python update-shell')
-                                                                    bat(label: 'Installing required Python version if not already installed', script: ".\\venv\\Scripts\\uv python find cpython-${entry.PYTHON_VERSION} --quiet 2>nul || .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}")
-                                                                    withEnv(["TOX_UV_PATH=${WORKSPACE}\\venv\\Scripts\\uv.exe"]){
-                                                                        bat(
-                                                                            label: 'Testing with tox',
-                                                                            script: ".\\venv\\Scripts\\uv run --only-group=tox-uv --isolated tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}"
+                                                                ){
+                                                                 if(thisIsUnix){
+                                                                    withEnv([
+                                                                        'PIP_CACHE_DIR=/tmp/pipcache',
+                                                                        'UV_TOOL_DIR=/tmp/uvtools',
+                                                                        'UV_PYTHON_CACHE_DIR=/tmp/uvpython',
+                                                                        'UV_CACHE_DIR=/tmp/uvcache',
+                                                                    ]){
+                                                                        def attempt = 0
+                                                                        retry(2){
+                                                                            withEnv([(attempt == 0) ? 'UV_OFFLINE=1' : 'UV_OFFLINE=0']){
+                                                                                attempt += 1
+                                                                                sh(
+                                                                                    label: "Running Tox: ${(attempt == 1) ? 'Offline' : 'Online'}",
+                                                                                    script: """uv python find cpython-${entry.PYTHON_VERSION} --quiet 2>/dev/null || uv python install cpython-${entry.PYTHON_VERSION}
+                                                                                               uv run --only-group=tox-uv --isolated tox --installpkg ${pkg.path} -e py${entry.PYTHON_VERSION.replace('.', '')}
+                                                                                            """
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                 } else {
+                                                                    withEnv([
+                                                                        'PIP_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\cache\\pipcache',
+                                                                        'UV_TOOL_DIR=C:\\Users\\ContainerUser\\Documents\\cache\\uvtools',
+                                                                        'UV_PYTHON_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\cache\\uvpython',
+                                                                        'UV_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\cache\\uvcache',
+                                                                    ]){
+                                                                        installMSVCRuntime('c:\\msvc_runtime\\')
+                                                                        bat(label:'Installing uv', script: 'python -m venv venv && .\\venv\\Scripts\\pip install --disable-pip-version-check uv && .\\venv\\Scripts\\uv python update-shell')
+                                                                        bat(label: 'Installing required Python version if not already installed', script: ".\\venv\\Scripts\\uv python find cpython-${entry.PYTHON_VERSION} --quiet 2>nul || .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}")
+                                                                        def attempt = 0
+                                                                        retry(2){
+                                                                            withEnv([
+                                                                                "TOX_UV_PATH=${WORKSPACE}\\venv\\Scripts\\uv.exe",
+                                                                                (attempt == 0) ? 'UV_OFFLINE=1' : 'UV_OFFLINE=0',
+                                                                            ]){
+                                                                                attempt += 1
+                                                                                bat(
+                                                                                    label: "Running Tox: ${(attempt == 1) ? 'Offline' : 'Online'}",
+                                                                                    script: ".\\venv\\Scripts\\uv run --only-group=tox-uv --isolated tox --installpkg ${pkg.path} -e py${entry.PYTHON_VERSION.replace('.', '')}"
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                 }
+                                                            }
+                                                        } else {
+                                                            if(thisIsUnix){
+                                                                sh(label: 'Installing uv', script: 'python3 -m venv venv && ./venv/bin/pip install --disable-pip-version-check uv')
+                                                                sh(label: 'Installing required Python version if not already installed', script: "./venv/bin/uv python find cpython-${entry.PYTHON_VERSION} --quiet 2>/dev/null || ./venv/bin/uv python install cpython-${entry.PYTHON_VERSION}")
+                                                                def attempt = 0
+                                                                retry(2){
+                                                                    withEnv([(attempt == 0) ? 'UV_OFFLINE=1' : 'UV_OFFLINE=0']){
+                                                                        attempt += 1
+                                                                        sh(
+                                                                            label: "Running Tox: ${(attempt == 1) ? 'Offline' : 'Online'}",
+                                                                            script: "./venv/bin/uv run --only-group=tox-uv --isolated tox --installpkg ${pkg.path} -e py${entry.PYTHON_VERSION.replace('.', '')}"
                                                                         )
                                                                     }
                                                                 }
-                                                             }
-                                                        }
-                                                    } else {
-                                                        if(isUnix()){
-                                                            sh(label: 'Installing uv', script: 'python3 -m venv venv && ./venv/bin/pip install --disable-pip-version-check uv')
-                                                            sh(label: 'Installing required Python version if not already installed', script: "./venv/bin/uv python find cpython-${entry.PYTHON_VERSION} --quiet 2>/dev/null || ./venv/bin/uv python install cpython-${entry.PYTHON_VERSION}")
-                                                            sh(
-                                                                label: 'Testing with tox',
-                                                                script: "./venv/bin/uv run --only-group=tox-uv --isolated tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}"
-                                                            )
-                                                        } else {
-                                                            bat(label:'Installing uv', script: 'python -m venv venv && .\\venv\\Scripts\\pip install --disable-pip-version-check uv && uv python update-shell')
-                                                            bat(label: 'Installing required Python version if not already installed', script: ".\\venv\\Scripts\\uv python find cpython-${entry.PYTHON_VERSION} --quiet 2>nul || .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}")
-                                                            bat(
-                                                                label: 'Testing with tox',
-                                                                script: ".\\venv\\Scripts\\uv run --only-group=tox-uv --isolated tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}"
-                                                            )
+                                                            } else {
+                                                                bat(label:'Installing uv', script: 'python -m venv venv && .\\venv\\Scripts\\pip install --disable-pip-version-check uv && uv python update-shell')
+                                                                bat(label: 'Installing required Python version if not already installed', script: ".\\venv\\Scripts\\uv python find cpython-${entry.PYTHON_VERSION} --quiet 2>nul || .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}")
+                                                                def attempt = 0
+                                                                retry(2){
+                                                                    withEnv([(attempt == 0) ? 'UV_OFFLINE=1' : 'UV_OFFLINE=0']){
+                                                                        attempt += 1
+                                                                        bat(
+                                                                            label: "Running Tox: ${(attempt == 1) ? 'Offline' : 'Online'}",
+                                                                            script: ".\\venv\\Scripts\\uv run --only-group=tox-uv --isolated tox --installpkg ${pkg.path} -e py${entry.PYTHON_VERSION.replace('.', '')}"
+                                                                        )
+                                                                    }
+                                                                }
+                                                            }
                                                         }
                                                     }
                                                 } finally{
                                                     if(fileExists('.git')){
-                                                        if(isUnix()){
+                                                        if(thisIsUnix){
                                                             sh "${tool(name: 'Default', type: 'git')} clean -dfx"
                                                         } else {
                                                             bat "${tool(name: 'Default', type: 'git')} clean -dfx"
